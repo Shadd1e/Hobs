@@ -1,0 +1,38 @@
+2026-04-04T19:00:07.461147445Z [inf]  Starting Container
+2026-04-04T19:00:08.113322711Z [err]  INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+2026-04-04T19:00:08.113328913Z [err]  INFO  [alembic.runtime.migration] Will assume transactional DDL.
+2026-04-04T19:00:08.113339151Z [err]  ERROR [alembic.util.messaging] Can't locate revision identified by '0014_customer_last_order'
+2026-04-04T19:00:08.113345306Z [inf]  FAILED: Can't locate revision identified by '0014_customer_last_order'
+2026-04-04T19:00:08.393163943Z [err]  INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+2026-04-04T19:00:08.393175224Z [err]  INFO  [alembic.runtime.migration] Will assume transactional DDL.
+2026-04-04T19:00:08.415631042Z [err]  ERROR [alembic.util.messaging] Can't locate revision identified by '0014_customer_last_order'
+2026-04-04T19:00:08.415640806Z [inf]  FAILED: Can't locate revision identified by '0014_customer_last_order'
+2026-04-04T19:00:10.206933559Z [err]  INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+2026-04-04T19:00:10.206939639Z [err]  INFO  [alembic.runtime.migration] Will assume transactional DDL.
+2026-04-04T19:00:10.206946665Z [err]  ERROR [alembic.util.messaging] Can't locate revision identified by '0014_customer_last_order'
+2026-04-04T19:00:10.206952540Z [inf]  FAILED: Can't locate revision identified by '0014_customer_last_order'
+2026-04-04T19:00:11.458875311Z [err]  INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+2026-04-04T19:00:11.458879796Z [err]  INFO  [alembic.runtime.migration] Will assume transactional DDL.
+2026-04-04T19:00:11.488302665Z [err]  ERROR [alembic.util.messaging] Can't locate revision identified by '0014_customer_last_order'
+2026-04-04T19:00:11.488309148Z [inf]  FAILED: Can't locate revision identified by '0014_customer_last_order'
+2026-04-04T19:00:13.220654141Z [err]  INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+2026-04-04T19:00:13.220658078Z [err]  INFO  [alembic.runtime.migration] Will assume transactional DDL.
+2026-04-04T19:00:13.220661931Z [err]  ERROR [alembic.util.messaging] Can't locate revision identified by '0014_customer_last_order'
+2026-04-04T19:00:13.220665536Z [inf]  FAILED: Can't locate revision identified by '0014_customer_last_order'
+2026-04-04T19:00:14.391163383Z [err]  INFO  [alembic.runtime.migration] Will assume transactional DDL.
+2026-04-04T19:00:14.421822885Z [err]  ERROR [alembic.util.messaging] Can't locate revision identified by '0014_customer_last_order'
+2026-04-04T19:00:14.421829676Z [inf]  FAILED: Can't locate revision identified by '0014_customer_last_order'
+2026-04-04T19:00:16.223429112Z [err]  INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+2026-04-04T19:00:16.223436633Z [err]  INFO  [alembic.runtime.migration] Will assume transactional DDL.
+2026-04-04T19:00:16.223441665Z [err]  ERROR [alembic.util.messaging] Can't locate revision identified by '0014_customer_last_order'
+2026-04-04T19:00:16.223446434Z [inf]  FAILED: Can't locate revision identified by '0014_customer_last_order'
+2026-04-04T19:00:17.395669221Z [err]  INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+2026-04-04T19:00:17.415813869Z [err]  ERROR [alembic.util.messaging] Can't locate revision identified by '0014_customer_last_order'
+2026-04-04T19:00:19.324526846Z [err]  INFO  [alembic.runtime.migration] Will assume transactional DDL.
+2026-04-04T19:00:19.324535371Z [inf]  FAILED: Can't locate revision identified by '0014_customer_last_order'
+2026-04-04T19:00:20.591644130Z [err]  INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+2026-04-04T19:00:20.591653489Z [err]  INFO  [alembic.runtime.migration] Will assume transactional DDL.
+2026-04-04T19:00:20.607610536Z [err]  ERROR [alembic.util.messaging] Can't locate revision identified by '0014_customer_last_order'
+2026-04-04T19:00:22.360406253Z [err]  INFO  [alembic.runtime.migration] Will assume transactional DDL.
+2026-04-04T19:00:22.377842445Z [inf]  FAILED: Can't locate revision identified by '0014_customer_last_order'
+2026-04-04T19:00:22.377852098Z [err]  ERROR [alembic.util.messaging] Can't locate revision identified by '0014_customer_last_order'

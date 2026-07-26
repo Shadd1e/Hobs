@@ -44,3 +44,20 @@ async def run_onboarding_reminders(x_cron_secret: str = Header(default="")):
     async with AsyncSessionLocal() as db:
         result = await send_draft_reminders(db)
     return result
+
+
+@router.post("/checkout-reminders")
+async def run_checkout_reminders(x_cron_secret: str = Header(default="")):
+    """
+    Point a scheduler at this roughly hourly, same as onboarding-reminders:
+
+        curl -X POST https://<your-api-domain>/internal/cron/checkout-reminders \
+             -H "X-Cron-Secret: $CRON_SECRET"
+    """
+    _check_cron_secret(x_cron_secret)
+
+    from app.api.v1.workers.checkout_reminder_job import send_checkout_reminders
+
+    async with AsyncSessionLocal() as db:
+        result = await send_checkout_reminders(db)
+    return result

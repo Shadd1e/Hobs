@@ -60,6 +60,36 @@ def create_client_access_token(client_id: str, merchant_id: str) -> str:
     return pyjwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
+def create_staff_access_token(staff_id: str, client_id: str, merchant_id: str) -> str:
+    """
+    Generate a staff-scoped JWT for individual HotelStaff (manager/top_manager)
+    dashboard login — distinct from create_client_access_token, which is
+    scoped to the store/client account as a whole, not an individual staff
+    member.
+
+    Payload shape:
+        { "sub": staff_id, "client_id": client_id, "merchant_id": merchant_id,
+          "type": "staff", "exp": ... }
+
+    decode_access_token() only special-cases "client" tokens today — staff
+    tokens fall through to the plain-string branch and would return the raw
+    payload dict's "sub" (the staff_id) rather than the fuller staff context.
+    Callers that need client_id/merchant_id from a staff token should decode
+    the raw JWT directly (pyjwt.decode) rather than relying on
+    decode_access_token() until that function is extended with a "staff"
+    branch, mirroring the "client" one above.
+    """
+    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode = {
+        "exp":         expire,
+        "sub":         staff_id,
+        "client_id":   client_id,
+        "merchant_id": merchant_id,
+        "type":        "staff",
+    }
+    return pyjwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
 def decode_access_token(token: str) -> str | dict | None:
     """
     Decode a JWT token.
@@ -67,6 +97,7 @@ def decode_access_token(token: str) -> str | dict | None:
     Returns:
         - str   → plain merchant token (legacy shape: { sub: merchant_id })
         - dict  → client token shape: { sub, merchant_id, type }
+        - dict  → staff token shape: { sub, client_id, merchant_id, type }
         - None  → invalid or expired
     """
     try:
@@ -79,6 +110,16 @@ def decode_access_token(token: str) -> str | dict | None:
                 "sub":         payload.get("sub"),        # client_id
                 "merchant_id": payload.get("merchant_id"),
                 "type":        "client",
+            }
+
+        if token_type == "staff":
+            # Staff token — return full dict so callers can see which staff
+            # member is acting, not just which store/client account.
+            return {
+                "sub":         payload.get("sub"),        # staff_id
+                "client_id":   payload.get("client_id"),
+                "merchant_id": payload.get("merchant_id"),
+                "type":        "staff",
             }
 
         # Merchant token — return plain merchant_id string (backwards-compat)

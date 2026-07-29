@@ -27,13 +27,33 @@ async def lifespan(app: FastAPI):
     if _startup_env != "local":
         _required = {
             "META_APP_SECRET": os.getenv("META_APP_SECRET"),
-            "PAYSTACK_SECRET_KEY": os.getenv("PAYSTACK_SECRET_KEY"),
-            "PAYSTACK_WEBHOOK_SECRET": os.getenv("PAYSTACK_WEBHOOK_SECRET"),
         }
         _missing = [k for k, v in _required.items() if not v]
         if _missing:
             logger.critical("Missing required environment variables: %s", _missing)
             import sys; sys.exit(1)
+
+        # PAYSTACK_SECRET_KEY / PAYSTACK_WEBHOOK_SECRET are intentionally NOT
+        # in _required above -- Paystack payments aren't wired up yet for
+        # this deployment, so the app is allowed to boot without them. Each
+        # Paystack request path (see app/api/v1/paystack.py) independently
+        # checks for PAYSTACK_WEBHOOK_SECRET and rejects if missing, so this
+        # doesn't silently disable webhook signature verification -- it just
+        # stops the ABSENCE of Paystack config from blocking the whole app
+        # (including the unrelated Meta/WhatsApp webhook) from starting.
+        # Add PAYSTACK_SECRET_KEY and PAYSTACK_WEBHOOK_SECRET back to
+        # _required once Paystack is actually turned on for this deployment.
+        _optional_paystack = {
+            "PAYSTACK_SECRET_KEY": os.getenv("PAYSTACK_SECRET_KEY"),
+            "PAYSTACK_WEBHOOK_SECRET": os.getenv("PAYSTACK_WEBHOOK_SECRET"),
+        }
+        _missing_paystack = [k for k, v in _optional_paystack.items() if not v]
+        if _missing_paystack:
+            logger.warning(
+                "Paystack env vars not set (%s) -- Paystack payment routes "
+                "will reject requests until these are configured.",
+                _missing_paystack,
+            )
 
         _admin_secret = os.getenv("ADMIN_SECRET", "")
         if not _admin_secret:

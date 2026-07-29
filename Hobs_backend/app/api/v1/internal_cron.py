@@ -61,3 +61,27 @@ async def run_checkout_reminders(x_cron_secret: str = Header(default="")):
     async with AsyncSessionLocal() as db:
         result = await send_checkout_reminders(db)
     return result
+
+
+@router.post("/weekly-staff-digest")
+async def run_weekly_staff_digest(x_cron_secret: str = Header(default="")):
+    """Point a scheduler at this once a week (e.g. Monday morning)."""
+    _check_cron_secret(x_cron_secret)
+
+    from app.api.v1.workers.digest_jobs import send_weekly_staff_digests
+
+    async with AsyncSessionLocal() as db:
+        result = await send_weekly_staff_digests(db)
+    return result
+
+
+@router.post("/daily-owner-digest")
+async def run_daily_owner_digest(x_cron_secret: str = Header(default="")):
+    """Point a scheduler at this once a day (e.g. 8am local time)."""
+    _check_cron_secret(x_cron_secret)
+
+    from app.api.v1.workers.digest_jobs import send_daily_owner_digests
+
+    async with AsyncSessionLocal() as db:
+        result = await send_daily_owner_digests(db)
+    return result

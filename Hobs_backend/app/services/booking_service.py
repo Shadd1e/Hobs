@@ -319,6 +319,37 @@ class BookingService:
         return booking
 
     # -----------------------------
+    # MANAGER-AUTHORIZED REVERT — bypasses the normal state machine
+    # -----------------------------
+    async def revert_booking_status(
+        self, booking_id: str, target_status: BookingStatus, reverting_staff_id
+    ) -> RoomBooking:
+        """
+        Deliberately separate from transition_to()/BookingStatus.can_transition_to().
+        That state machine is intentionally strict for everyday use (e.g.
+        CANCELLED has no outgoing transitions) — this method exists
+        specifically for manager-authorized reverts of a StaffActionLog
+        entry, and callers MUST have already verified the calling staff
+        member has can_review_flagged_actions() permission before reaching
+        here. This method itself does not check permissions — that's the
+        caller's job (see StaffOrchestrator._handle_revert), same
+        separation as everywhere else in this codebase between service
+        (mechanism) and orchestrator (policy/permission).
+        """
+        stmt = select(RoomBooking).where(RoomBooking.id == booking_id).with_for_update()
+        booking = (await self.db.execute(stmt)).scalars().first()
+        if not booking:
+            raise ValueError("Booking not found")
+
+        from datetime import timezone as _tz, datetime as _dt
+        booking.status = target_status
+        booking.updated_at = _dt.now(_tz.utc)
+        self.db.add(booking)
+        await self.db.commit()
+        await self.db.refresh(booking)
+        return booking
+
+    # -----------------------------
     # STATUS TRANSITIONS
     # -----------------------------
     async def check_in_guest(self, booking_id: str) -> RoomBooking:

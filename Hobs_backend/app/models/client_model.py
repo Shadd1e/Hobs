@@ -237,6 +237,18 @@ class Client(Base):
         lazy="selectin",
     )
 
+    staff_action_logs = relationship(
+        "StaffActionLog",
+        cascade="all, delete-orphan",
+        lazy="select",
+    )
+
+    permission_change_requests = relationship(
+        "PermissionChangeRequest",
+        cascade="all, delete-orphan",
+        lazy="select",
+    )
+
     flutterwave_subaccount = relationship(
         "FlutterwaveSubaccount",
         back_populates="client",

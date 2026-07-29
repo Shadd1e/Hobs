@@ -223,6 +223,7 @@ from app.api.v1.paystack import router as paystack_router
 from app.api.v1.flutterwave_booking import router as flutterwave_booking_router
 from app.api.v1.hotel_webhook import router as hotel_webhook_router
 from app.api.v1.hotel_dashboard import router as hotel_dashboard_router
+from app.api.v1.hotel_staff_auth import router as hotel_staff_auth_router
 from app.api.v1.payment import router as payments_router
 from app.api.v1.checkout import router as checkout_router
 
@@ -295,6 +296,7 @@ app.include_router(paystack_router,  prefix=API_V1_PREFIX, tags=["Paystack"])
 app.include_router(flutterwave_booking_router, prefix=API_V1_PREFIX, tags=["Flutterwave Bookings"])
 app.include_router(hotel_webhook_router, prefix=API_V1_PREFIX, tags=["Hotel WhatsApp Webhook"])
 app.include_router(hotel_dashboard_router, prefix=API_V1_PREFIX, tags=["Hotel Dashboard"])
+app.include_router(hotel_staff_auth_router, prefix=API_V1_PREFIX, tags=["Hotel Staff Auth"])
 
 # Merchant identity & onboarding
 app.include_router(merchant_router,  prefix=API_V1_PREFIX, tags=["Merchants"])

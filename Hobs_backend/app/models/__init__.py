@@ -31,6 +31,8 @@ from app.models.room_type    import RoomType
 from app.models.room         import Room
 from app.models.room_booking import RoomBooking, BookingStatus, BookingSource
 from app.models.hotel_staff  import HotelStaff
+from app.models.staff_action_log import StaffActionLog
+from app.models.permission_change_request import PermissionChangeRequest
 
 # ── WhatsApp / messaging ──────────────────────────────────────────────────────
 from app.models.client_whatsapp_credential import ClientWhatsAppCredential
@@ -76,6 +78,8 @@ __all__ = [
     "BookingStatus",
     "BookingSource",
     "HotelStaff",
+    "StaffActionLog",
+    "PermissionChangeRequest",
 
     # WhatsApp / messaging
     "ClientWhatsAppCredential",

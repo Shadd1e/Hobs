@@ -64,6 +64,36 @@ async def _verify_hotel_ownership(db: AsyncSession, client_id: str, merchant_id:
         raise HTTPException(status_code=403, detail="Hotel does not belong to this account")
 
 
+async def get_current_staff(request: Request, db: AsyncSession = Depends(get_db)):
+    """
+    Decodes a staff-scoped JWT (from POST /hotel/staff/login) and loads the
+    HotelStaff row. Separate from _authenticated_merchant_id -- that one
+    identifies the hotel OWNER's account, this one identifies WHICH staff
+    member is acting, which permission-review and role-change endpoints
+    specifically need.
+    """
+    from app.core.security import decode_access_token
+    from app.models.hotel_staff import HotelStaff as _HotelStaff
+
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Staff authentication required")
+
+    token = auth_header[7:]
+    payload = decode_access_token(token)
+    if not isinstance(payload, dict) or payload.get("type") != "staff":
+        raise HTTPException(status_code=401, detail="Invalid staff token")
+
+    staff_id = payload.get("sub")
+    result = await db.execute(
+        select(_HotelStaff).where(_HotelStaff.id == staff_id, _HotelStaff.is_active.is_(True))
+    )
+    staff = result.scalar_one_or_none()
+    if not staff:
+        raise HTTPException(status_code=401, detail="Staff account not found or inactive")
+    return staff
+
+
 # ==========================================================
 # DASHBOARD GRID -- starter view (room number + free/booked only)
 # ==========================================================
@@ -278,3 +308,97 @@ async def list_bookings(
 
     result = await db.execute(stmt)
     return result.scalars().all()
+
+
+# ==========================================================
+# STAFF AUDIT LOG -- review queue + revert
+# ==========================================================
+@router.get("/audit-log")
+async def list_audit_log(
+    client_id: str = Query(...),
+    pending_only: bool = Query(False, description="Only show unreviewed, high-impact actions"),
+    staff: "HotelStaff" = Depends(get_current_staff),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.models.staff_action_log import StaffActionLog
+
+    if staff.client_id != client_id:
+        raise HTTPException(status_code=403, detail="Not authorized for this hotel")
+
+    stmt = select(StaffActionLog).where(StaffActionLog.client_id == client_id)
+    if pending_only:
+        stmt = stmt.where(StaffActionLog.is_high_impact.is_(True), StaffActionLog.reviewed.is_(False))
+    stmt = stmt.order_by(StaffActionLog.created_at.desc()).limit(200)
+
+    result = await db.execute(stmt)
+    logs = result.scalars().all()
+    return [
+        {
+            "id": str(l.id), "action": l.action, "room_id": str(l.room_id) if l.room_id else None,
+            "booking_id": l.booking_id, "previous_status": l.previous_status, "new_status": l.new_status,
+            "staff_phone": l.staff_phone_snapshot, "is_high_impact": l.is_high_impact,
+            "reviewed": l.reviewed, "reverted": l.reverted, "created_at": l.created_at,
+            "revert_expires_at": l.revert_expires_at,
+        }
+        for l in logs
+    ]
+
+
+@router.post("/audit-log/{log_id}/revert")
+async def revert_audit_log_entry(
+    log_id: str,
+    staff: "HotelStaff" = Depends(get_current_staff),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.services.staff_audit_service import StaffAuditService
+
+    try:
+        log = await StaffAuditService(db).revert_by_log_id(log_id, staff)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"status": "reverted", "log_id": str(log.id)}
+
+
+# ==========================================================
+# PERMISSION CHANGES -- top_manager only, email-code gated, never via WhatsApp
+# ==========================================================
+@router.post("/staff/{target_staff_id}/role-change")
+async def initiate_role_change(
+    target_staff_id: str,
+    new_role: str,
+    staff: "HotelStaff" = Depends(get_current_staff),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.services.permission_change_service import PermissionChangeService
+
+    try:
+        request = await PermissionChangeService(db).initiate(
+            merchant_id=staff.merchant_id, client_id=staff.client_id,
+            requesting_staff=staff, target_staff_id=target_staff_id, new_role=new_role,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return {
+        "status": "code_sent", "request_id": str(request.id),
+        "sent_to": request.email_sent_to, "expires_at": request.expires_at,
+    }
+
+
+@router.post("/staff/role-change/{request_id}/confirm")
+async def confirm_role_change(
+    request_id: str,
+    code: str,
+    staff: "HotelStaff" = Depends(get_current_staff),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.services.permission_change_service import PermissionChangeService
+
+    try:
+        target = await PermissionChangeService(db).confirm(
+            request_id=request_id, code=code, confirming_staff=staff,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return {"status": "role_updated", "staff_id": str(target.id), "new_role": target.role}

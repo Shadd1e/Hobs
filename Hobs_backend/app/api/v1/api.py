@@ -6,6 +6,7 @@ from fastapi import APIRouter
 from app.core.config import settings
 
 from app.api.v1.webhook import router as webhook_router
+from app.api.v1.hotel_webhook import router as hotel_webhook_router
 from app.api.v1.inventory import router as inventory_router
 from app.api.v1.payment import router as payment_router
 from app.api.v1.auth import router as auth_router
@@ -42,3 +43,4 @@ api_v1_router.include_router(admin_router)
 api_v1_router.include_router(credential_router)
 api_v1_router.include_router(merchant_whatsapp_router)
 api_v1_router.include_router(webhook_router)
+api_v1_router.include_router(hotel_webhook_router)

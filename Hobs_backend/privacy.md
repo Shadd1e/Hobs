@@ -4,7 +4,7 @@
 
 This Privacy Policy explains how HoBS ("we," "us," "our," "the Service") collects, uses, stores, and protects information when hotels and their guests use our WhatsApp-based booking platform.
 
-If you have questions about this policy, contact us at **[your support email]**.
+If you have questions about this policy, contact us at nshadrachn@gmail.com.
 
 ---
 
@@ -89,7 +89,7 @@ Depending on your location, you may have the right to:
 - Request deletion of your information, subject to our legal and legitimate business retention needs (e.g. financial records, audit logs)
 - Object to certain uses of your information
 
-To exercise these rights, contact **[your support email]**.
+To exercise these rights, contact nshadrachn@gmail.com.
 
 ## 9. Data Security
 

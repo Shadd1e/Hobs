@@ -1,10 +1,9 @@
-# HoBS frontend — homepage / onboarding / login
+# HoBS frontend — homepage / onboarding / login / dashboard
 
 Next.js (App Router, TypeScript) frontend for the merchant/hotel-owner side
-of HoBS. Scope of this pass: homepage → 4-step apply wizard → admin
-approval (offline) → set password → sign in → email verification gate →
-dashboard placeholder. The real dashboard (rooms, bookings, staff audit) is
-the next phase.
+of HoBS. Covers: homepage → 4-step apply wizard → admin approval (offline)
+→ set password → sign in → email verification gate → hotel dashboard
+(room grid, room types, rooms, bookings, staff audit log + role changes).
 
 ## Setup
 

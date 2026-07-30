@@ -335,3 +335,330 @@ export function resetPassword(email: string, code: string, newPassword: string) 
     new_password: newPassword,
   });
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// Clients (= hotels owned by this merchant) — app/api/v1/client_api.py
+// A merchant can own more than one hotel; every hotel-dashboard call below
+// takes a client_id, so the dashboard always starts by listing these.
+// ──────────────────────────────────────────────────────────────────────────
+
+export type ClientSummary = {
+  id: string;
+  name: string;
+  whatsapp_number: string | null;
+  store_contact_number: string | null;
+  merchant_id: string;
+  created_at: string | null;
+  operator_notify_phone: string | null;
+  address: string | null;
+  has_whatsapp_credential: boolean;
+  whatsapp_active: boolean | null;
+  has_login: boolean;
+};
+
+/** GET /clients/ — client_api.py:419. Bearer merchant token. */
+export function listClients(token: string) {
+  return request<ClientSummary[]>("GET", "/clients/", undefined, { token });
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Hotel dashboard — app/api/v1/hotel_dashboard.py
+// All of these reuse the merchant bearer token (NOT the staff token below).
+// Every call needs client_id — the backend verifies that hotel actually
+// belongs to the authenticated merchant (403 if not) on every route.
+// ──────────────────────────────────────────────────────────────────────────
+
+export type RoomStatusRead = {
+  id: string;
+  room_number: string;
+  room_type_name: string | null;
+  room_type_price: number | null;
+  is_active: boolean;
+  is_booked_today: boolean;
+};
+
+/** GET /hotel/dashboard/rooms — hotel_dashboard.py:100. Starter grid view: free/booked only. */
+export function dashboardRooms(token: string, clientId: string) {
+  return request<RoomStatusRead[]>(
+    "GET",
+    `/hotel/dashboard/rooms?client_id=${encodeURIComponent(clientId)}`,
+    undefined,
+    { token }
+  );
+}
+
+export type RoomAdminDetail = {
+  room_number: string;
+  is_booked_today: boolean;
+  booking: {
+    guest_name: string | null;
+    guest_phone: string | null;
+    check_in: string;
+    check_out: string;
+    nights: number;
+    total_amount: string | number;
+    amount_paid: string | number | null;
+    source: string;
+    logged_by_staff_phone: string | null;
+    booking_code: string;
+  } | null;
+};
+
+/** GET /hotel/dashboard/rooms/{room_id} — hotel_dashboard.py:116. Admin drill-down for a single room. */
+export function dashboardRoomDetail(token: string, clientId: string, roomId: string) {
+  return request<RoomAdminDetail>(
+    "GET",
+    `/hotel/dashboard/rooms/${encodeURIComponent(roomId)}?client_id=${encodeURIComponent(clientId)}`,
+    undefined,
+    { token }
+  );
+}
+
+// ── Room types ──────────────────────────────────────────────────────────
+
+export type RoomTypeRead = {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  image_url: string | null;
+  merchant_id: string | null;
+  client_id: string | null;
+};
+
+export type RoomTypeInput = {
+  name: string;
+  description?: string | null;
+  price: number;
+  image_url?: string | null;
+};
+
+/** POST /hotel/room-types — hotel_dashboard.py:136. 409 if name already used for this hotel. */
+export function createRoomType(token: string, clientId: string, merchantId: string, input: RoomTypeInput) {
+  return request<RoomTypeRead>("POST", "/hotel/room-types", {
+    ...input,
+    merchant_id: merchantId,
+    client_id: clientId,
+  }, { token });
+}
+
+/** GET /hotel/room-types — hotel_dashboard.py:154 */
+export function listRoomTypes(token: string, clientId: string) {
+  return request<RoomTypeRead[]>(
+    "GET",
+    `/hotel/room-types?client_id=${encodeURIComponent(clientId)}`,
+    undefined,
+    { token }
+  );
+}
+
+/** PATCH /hotel/room-types/{id} — hotel_dashboard.py:165. Partial update (e.g. price-only). */
+export function updateRoomType(
+  token: string,
+  clientId: string,
+  roomTypeId: string,
+  input: Partial<RoomTypeInput>
+) {
+  return request<RoomTypeRead>(
+    "PATCH",
+    `/hotel/room-types/${encodeURIComponent(roomTypeId)}?client_id=${encodeURIComponent(clientId)}`,
+    input,
+    { token }
+  );
+}
+
+/** DELETE /hotel/room-types/{id} — hotel_dashboard.py:185. 409 if rooms still reference it. */
+export function deleteRoomType(token: string, clientId: string, roomTypeId: string) {
+  return request<{ status: string }>(
+    "DELETE",
+    `/hotel/room-types/${encodeURIComponent(roomTypeId)}?client_id=${encodeURIComponent(clientId)}`,
+    undefined,
+    { token }
+  );
+}
+
+// ── Rooms ───────────────────────────────────────────────────────────────
+
+export type RoomRead = {
+  id: string;
+  room_number: string;
+  room_type_id: string;
+  is_active: boolean;
+  merchant_id: string;
+  client_id: string;
+};
+
+/** POST /hotel/rooms — hotel_dashboard.py:207. 409 if room_number already exists for this hotel. */
+export function createRoom(
+  token: string,
+  clientId: string,
+  merchantId: string,
+  input: { room_number: string; room_type_id: string; is_active?: boolean }
+) {
+  return request<RoomRead>("POST", "/hotel/rooms", {
+    ...input,
+    merchant_id: merchantId,
+    client_id: clientId,
+  }, { token });
+}
+
+/** GET /hotel/rooms — hotel_dashboard.py:228 */
+export function listRooms(token: string, clientId: string) {
+  return request<RoomRead[]>(
+    "GET",
+    `/hotel/rooms?client_id=${encodeURIComponent(clientId)}`,
+    undefined,
+    { token }
+  );
+}
+
+/** PATCH /hotel/rooms/{id} — hotel_dashboard.py:239 */
+export function updateRoom(
+  token: string,
+  clientId: string,
+  roomId: string,
+  input: Partial<{ room_number: string; room_type_id: string; is_active: boolean }>
+) {
+  return request<RoomRead>(
+    "PATCH",
+    `/hotel/rooms/${encodeURIComponent(roomId)}?client_id=${encodeURIComponent(clientId)}`,
+    input,
+    { token }
+  );
+}
+
+/** DELETE /hotel/rooms/{id} — hotel_dashboard.py:258 */
+export function deleteRoom(token: string, clientId: string, roomId: string) {
+  return request<{ status: string }>(
+    "DELETE",
+    `/hotel/rooms/${encodeURIComponent(roomId)}?client_id=${encodeURIComponent(clientId)}`,
+    undefined,
+    { token }
+  );
+}
+
+// ── Bookings ────────────────────────────────────────────────────────────
+
+export type RoomBookingAdminRead = {
+  id: string;
+  booking_code: string;
+  room_id: string;
+  guest_name: string | null;
+  guest_phone: string | null;
+  check_in: string;
+  check_out: string;
+  merchant_id: string;
+  client_id: string;
+  total_amount: string | number;
+  amount_paid: string | number | null;
+  status: string;
+  source: string;
+  logged_by_staff_phone: string | null;
+  raw_staff_message: string | null;
+  payment_ref: string | null;
+  created_at: string;
+  confirmed_at: string | null;
+  checked_in_at: string | null;
+  checked_out_at: string | null;
+  cancelled_at: string | null;
+};
+
+/** GET /hotel/bookings — hotel_dashboard.py:293. status is optional, matched case-insensitively (backend upper()s it). */
+export function listBookings(token: string, clientId: string, status?: string) {
+  const q = new URLSearchParams({ client_id: clientId });
+  if (status) q.set("status", status);
+  return request<RoomBookingAdminRead[]>("GET", `/hotel/bookings?${q.toString()}`, undefined, { token });
+}
+
+/** GET /hotel/bookings/{booking_code} — hotel_dashboard.py:277. Code is case-insensitive (backend upper()s it). */
+export function getBooking(token: string, clientId: string, bookingCode: string) {
+  return request<RoomBookingAdminRead>(
+    "GET",
+    `/hotel/bookings/${encodeURIComponent(bookingCode)}?client_id=${encodeURIComponent(clientId)}`,
+    undefined,
+    { token }
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Hotel STAFF auth + audit log — app/api/v1/hotel_staff_auth.py,
+// app/api/v1/hotel_dashboard.py (audit-log / role-change section)
+//
+// IMPORTANT: this is a SEPARATE credential from the merchant login above.
+// The audit-log and role-change endpoints decode a staff-scoped JWT
+// (type: "staff") via get_current_staff, not the merchant token — sending
+// the merchant token here 401s. See lib/staffAuth.tsx for storage.
+// ──────────────────────────────────────────────────────────────────────────
+
+export type StaffLoginResult = {
+  access_token: string;
+  token_type: "bearer";
+  staff_id: string;
+  role: "receptionist" | "manager" | "top_manager" | string;
+  name: string | null;
+};
+
+/** POST /hotel/staff/login — hotel_staff_auth.py:37. phone_number + password (no dashboard self-service reset yet). */
+export function staffLogin(phoneNumber: string, password: string) {
+  return request<StaffLoginResult>("POST", "/hotel/staff/login", {
+    phone_number: phoneNumber,
+    password,
+  });
+}
+
+export type AuditLogEntry = {
+  id: string;
+  action: string;
+  room_id: string | null;
+  booking_id: string | null;
+  previous_status: string | null;
+  new_status: string | null;
+  staff_phone: string | null;
+  is_high_impact: boolean;
+  reviewed: boolean;
+  reverted: boolean;
+  created_at: string;
+  revert_expires_at: string | null;
+};
+
+/** GET /hotel/audit-log — hotel_dashboard.py:316. Staff bearer token. 403 if staff.client_id !== client_id. */
+export function listAuditLog(staffToken: string, clientId: string, pendingOnly = false) {
+  const q = new URLSearchParams({ client_id: clientId });
+  if (pendingOnly) q.set("pending_only", "true");
+  return request<AuditLogEntry[]>("GET", `/hotel/audit-log?${q.toString()}`, undefined, { token: staffToken });
+}
+
+/** POST /hotel/audit-log/{log_id}/revert — hotel_dashboard.py:347. Staff bearer token. */
+export function revertAuditLogEntry(staffToken: string, logId: string) {
+  return request<{ status: string; log_id: string }>(
+    "POST",
+    `/hotel/audit-log/${encodeURIComponent(logId)}/revert`,
+    undefined,
+    { token: staffToken }
+  );
+}
+
+/**
+ * POST /hotel/staff/{target_staff_id}/role-change — hotel_dashboard.py:365
+ * new_role is sent as a query param on the backend (function signature has
+ * no request body model for it), not JSON body — matches that here.
+ * top_manager only; sends an email code to confirm.
+ */
+export function initiateRoleChange(staffToken: string, targetStaffId: string, newRole: string) {
+  return request<{ status: string; request_id: string; sent_to: string; expires_at: string }>(
+    "POST",
+    `/hotel/staff/${encodeURIComponent(targetStaffId)}/role-change?new_role=${encodeURIComponent(newRole)}`,
+    undefined,
+    { token: staffToken }
+  );
+}
+
+/** POST /hotel/staff/role-change/{request_id}/confirm — hotel_dashboard.py:388. code is also a query param. */
+export function confirmRoleChange(staffToken: string, requestId: string, code: string) {
+  return request<{ status: string; staff_id: string; new_role: string }>(
+    "POST",
+    `/hotel/staff/role-change/${encodeURIComponent(requestId)}/confirm?code=${encodeURIComponent(code)}`,
+    undefined,
+    { token: staffToken }
+  );
+}

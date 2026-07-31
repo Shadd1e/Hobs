@@ -1,9 +1,7 @@
-# HoBS frontend — homepage / onboarding / login / dashboard
+# HoBS frontend — homepage / onboarding / login / hotel dashboard
 
 Next.js (App Router, TypeScript) frontend for the merchant/hotel-owner side
-of HoBS. Covers: homepage → 4-step apply wizard → admin approval (offline)
-→ set password → sign in → email verification gate → hotel dashboard
-(room grid, room types, rooms, bookings, staff audit log + role changes).
+of HoBS.
 
 ## Setup
 
@@ -13,61 +11,100 @@ cp .env.local.example .env.local   # set NEXT_PUBLIC_API_BASE_URL to your backen
 npm run dev
 ```
 
-This sandbox has no network access, so `npm install` hasn't been run here —
-do it in your own environment. Nothing else needs configuring beyond the
-env var.
+## Structure
+
+1. **Public funnel**: homepage → 4-step apply wizard → admin approval
+   (offline) → set password → sign in → email verification gate.
+2. **Hotel dashboard** (`/dashboard`): a single shared top bar
+   (`components/DashboardChrome.tsx`) with a hotel-switcher dropdown and
+   tabs — Rooms (`/dashboard`), Room types, Manage rooms, Bookings, Audit
+   log. Which hotel is selected lives in the `?client=` query string
+   (persisted to `localStorage` as a fallback so returning to `/dashboard`
+   with no query string re-selects the last one) via
+   `components/useDashboardClient.ts` — every dashboard page uses that hook
+   rather than re-implementing the client-selection/auth-guard logic.
+3. **Staff audit log** (`/dashboard/audit-log`) requires a *separate* staff
+   credential from `/dashboard/staff-login` (`lib/staffAuth.tsx`) — not the
+   merchant login. Includes revert and a top_manager-only role-change panel
+   (email-code confirmed, never over WhatsApp).
 
 ## How this maps to the backend
 
-Every backend call lives in **`lib/api.ts`** — that file is the single
-source of truth for request/response shapes, and every function has a
-comment pointing at the backend file/line it was read from. If a page needs
-a new field, add it there first and confirm it against the backend schema,
-don't guess it in a component.
+Every backend call lives in **`lib/api.ts`** — every function has a
+comment pointing at the backend file/line it was read from. Convention:
+every hotel-scoped function takes `clientId` as its second argument, right
+after `token`, so call sites read consistently
+(`fn(token, clientId, ...)`).
 
 Key contract details worth knowing before extending this:
 
-- **Auth is bearer JWT, not cookies.** Token comes from `POST
-  /merchants/login`, stored in `localStorage` via `lib/auth.tsx`, sent as
-  `Authorization: Bearer <token>`. The backend's `TenantMiddleware` reads
-  that header — there is no cookie-based session anywhere in this backend.
+- **Auth is bearer JWT, not cookies** (`lib/auth.tsx`). No cookie-based
+  session exists anywhere in this backend.
 - **The apply wizard's `resume_token` IS the credential** for steps 2-4 —
-  no Authorization header on those calls. Treat it like a bearer token in
-  the URL: don't log it, and refetch `GET
-  /merchants/apply/resume/{token}` on every mount so a reload doesn't lose
-  data (the backend comment is explicit about this).
-- **Two different "reset password" mechanisms, don't conflate them:**
-  - `POST /merchants/set-password` — token from the *approval* email,
-    single-use, 72h expiry. First-time password only.
-  - `POST /merchants/reset-password` — email + 6-digit code (10 min TTL,
-    sent by `/merchants/forgot-password`). Used both for genuine "forgot
-    password" and for the `must_change_password` flag after login, since
-    there's no separate authenticated change-password endpoint.
-- **Legacy `/merchants/apply` (single-step) is intentionally not wired.**
-  The 4-step wizard is the maintained path (see the confirmation message in
-  chat for why). If that turns out to be wrong, swap `applyStepOne` calls
-  for `applyStepOne`'s sibling in `lib/api.ts` — not written yet, add it
-  the same way as the others if needed.
-- **CORS**: production backend rejects wildcard origins — whoever deploys
-  this needs to add its exact origin to the backend's `ALLOWED_ORIGINS`
-  env var, or every request will fail at the browser level with a CORS
-  error that looks like nothing happened.
+  refetch `GET /merchants/apply/resume/{token}` on every mount.
+- **Two unrelated "reset password" mechanisms**: `POST
+  /merchants/set-password` (approval-email token, first-time only) vs
+  `POST /merchants/reset-password` (email + 6-digit code, also used for
+  the post-login `must_change_password` case since there's no separate
+  authenticated change-password endpoint).
+- **A merchant can own more than one hotel** — `GET /clients/` lists them;
+  every `/hotel/*` call needs `client_id`, re-verified server-side (403 if
+  it doesn't belong to the authenticated merchant).
+- **`GET /hotel/bookings` does a raw `status.upper()` string match, not a
+  validated enum field.** A status filter value that isn't exactly one of
+  `CREATED | PENDING_PAYMENT | PAID | CHECKED_IN | CHECKED_OUT | CANCELLED
+  | REFUNDED` silently matches zero rows instead of erroring — keep any
+  status dropdown's values exactly equal to that list.
+- **The staff audit log uses a second, unrelated credential** — token from
+  `POST /hotel/staff/login` (phone + password), rejected by the merchant
+  JWT (`get_current_staff` checks `payload.type == "staff"`). No `GET
+  /hotel/staff/me` exists, so an expired staff token is only caught when a
+  real call 401s.
+- **CORS**: production backend rejects wildcard origins — add the deployed
+  origin to the backend's `ALLOWED_ORIGINS` or requests fail silently in
+  the browser.
+
+## Repair log (this pass)
+
+This zip was uploaded mid-migration and would not compile. Fixed:
+
+- `lib/api.ts` still had the old contract (`Room`/`RoomType`/`BookingAdmin`
+  types, old argument orders) while every dashboard page had already been
+  rewritten against a new one (`RoomRead`/`RoomTypeRead`/
+  `RoomBookingAdminRead`, `clientId` right after `token` everywhere,
+  `getBooking(token, clientId, bookingCode)`). Rewrote `lib/api.ts` to
+  match what the pages actually call.
+- `/dashboard` (root) was still the old picker-that-redirects-to
+  `/dashboard/{clientId}` page — never migrated to the new chrome/hook
+  pattern, even though `DashboardChrome`'s "Rooms" tab already pointed at
+  it. Rebuilt it as the room-status grid + guest-detail drill-down.
+- Deleted the orphaned `app/dashboard/[clientId]/*` tree and the orphaned
+  top-level `app/staff-login/page.tsx` — both fully superseded and
+  unreferenced by anything in the current flow.
+- `app/globals.css` had zero of the `.dash-*` / `.btn-link` / `.status-pill`
+  / `.room-card` classes the new chrome and pages render with — added all
+  of them.
+- Fixed a silent bug in the bookings status filter: it offered `"PENDING"`
+  as an option, but the real enum value is `"PENDING_PAYMENT"` — given the
+  raw-string-match backend behavior above, that filter always returned
+  zero rows.
+- Fixed `useDashboardClient`'s `selectClient` to push `${pathname}?...`
+  instead of a bare `?...` — the latter isn't guaranteed to resolve against
+  the current route consistently.
 
 ## Known gaps / next phase
 
-- **Guest-facing booking chat is WhatsApp-only in this backend** — there's
-  no REST/web-chat endpoint for guests today (`POST
-  /api/v1/webhook/hotel-whatsapp` is a Meta webhook, not something a
-  browser can call). If a web chat widget for guests is wanted later, that
-  needs new backend endpoints first.
-- **Hotel dashboard proper** (`/api/v1/hotel/*` — rooms, room types,
-  bookings, audit log) uses the *same* merchant JWT from this login flow,
-  plus a second, separate staff-level JWT from `POST
-  /hotel/staff/login` for the audit-log/role-change endpoints specifically.
-  Not built yet — flagging so it's not a surprise when that phase starts.
+- **Guest-facing booking chat is WhatsApp-only** — no REST/web-chat
+  endpoint for guests exists yet (`POST /api/v1/webhook/hotel-whatsapp` is
+  a Meta webhook). A guest-facing web widget needs new backend endpoints.
 - **Payments use Flutterwave, not Paystack**, despite `Paystack*`-named
-  config/services still existing in the codebase for the unrelated
-  e-commerce product. Not relevant to this phase, but critical once
-  checkout/payment UI gets built — see the backend's
+  config/services in the codebase for the unrelated e-commerce product.
+  Nothing in this dashboard triggers a payment yet, but get this right
+  before building checkout/refund UI — see the backend's
   `docs/WIRING_NOTES.md`.
+- No pagination on rooms/room-types/bookings lists yet — fine for now, but
+  worth checking before a hotel with hundreds of rooms hits this.
 - `app/terms/page.tsx` is a placeholder — needs real copy before launch.
+- **Staff creation** (adding a brand-new staff member, distinct from
+  changing an existing one's role) doesn't have a wired endpoint — confirm
+  with the backend team whether one exists before assuming it doesn't.

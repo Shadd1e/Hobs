@@ -14,11 +14,13 @@ import { useDashboardClient } from "@/components/useDashboardClient";
 
 const STATUS_OPTIONS = [
   { value: "", label: "All statuses" },
-  { value: "PENDING", label: "Pending" },
+  { value: "CREATED", label: "Created" },
+  { value: "PENDING_PAYMENT", label: "Pending payment" },
   { value: "PAID", label: "Paid" },
   { value: "CHECKED_IN", label: "Checked in" },
   { value: "CHECKED_OUT", label: "Checked out" },
   { value: "CANCELLED", label: "Cancelled" },
+  { value: "REFUNDED", label: "Refunded" },
 ];
 
 export default function BookingsPage() {

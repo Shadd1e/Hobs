@@ -3,25 +3,24 @@
 /**
  * lib/staffAuth.tsx
  *
- * Separate from lib/auth.tsx on purpose. POST /hotel/staff/login issues a
- * JWT with `type: "staff"` (see app/api/v1/hotel_dashboard.py's
- * get_current_staff), which is a DIFFERENT credential from the merchant
- * bearer token — it identifies an individual HotelStaff row, not the
- * merchant account. The audit-log and role-change endpoints require this
- * token specifically; sending the merchant token there 401s.
+ * The audit-log/role-change endpoints (POST /hotel/staff/login and
+ * everything under GET/POST /hotel/audit-log, /hotel/staff/*) require a
+ * SEPARATE staff-scoped JWT — not the merchant token from lib/auth.tsx.
+ * See hotel_dashboard.py's get_current_staff: it decodes a JWT and rejects
+ * anything where payload.type != "staff", so passing the merchant token
+ * here will always 401.
  *
- * A dashboard user needs BOTH sessions to see everything: the merchant
- * session to view rooms/bookings/room-types, and (optionally) a staff
- * session to view the audit log and manage staff roles. Not every merchant
- * user will have a HotelStaff row, so this session is allowed to be absent
- * — pages that need it should prompt for staff login rather than assuming
- * it exists alongside the merchant session.
+ * There's no GET /hotel/staff/me on the backend to validate a stored token
+ * on page load, so unlike the merchant session, this one is trusted at
+ * face value until an actual API call proves it invalid (at which point
+ * callers should clear it and redirect to /staff-login).
  */
 
 import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -38,41 +37,42 @@ export type StaffSession = {
 
 type StaffAuthContextValue = {
   staffSession: StaffSession | null;
+  loading: boolean;
   setStaffSession: (session: StaffSession | null) => void;
   staffLogout: () => void;
 };
 
 const StaffAuthContext = createContext<StaffAuthContextValue | null>(null);
 
-function readInitial(): StaffSession | null {
-  if (typeof window === "undefined") return null;
-  const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as StaffSession;
-  } catch {
-    return null;
-  }
-}
-
 export function StaffAuthProvider({ children }: { children: ReactNode }) {
-  const [staffSession, setStaffSessionState] = useState<StaffSession | null>(readInitial);
+  const [staffSession, setStaffSessionState] = useState<StaffSession | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const setStaffSession = useCallback((next: StaffSession | null) => {
     setStaffSessionState(next);
     if (typeof window === "undefined") return;
-    if (next) {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    } else {
-      window.localStorage.removeItem(STORAGE_KEY);
-    }
+    if (next) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    else window.localStorage.removeItem(STORAGE_KEY);
   }, []);
 
   const staffLogout = useCallback(() => setStaffSession(null), [setStaffSession]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      try {
+        setStaffSessionState(JSON.parse(raw));
+      } catch {
+        window.localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+    setLoading(false);
+  }, []);
+
   const value = useMemo(
-    () => ({ staffSession, setStaffSession, staffLogout }),
-    [staffSession, setStaffSession, staffLogout]
+    () => ({ staffSession, loading, setStaffSession, staffLogout }),
+    [staffSession, loading, setStaffSession, staffLogout]
   );
 
   return <StaffAuthContext.Provider value={value}>{children}</StaffAuthContext.Provider>;

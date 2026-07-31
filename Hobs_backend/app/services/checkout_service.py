@@ -435,7 +435,7 @@ class CheckoutService:
                 redirect_url = f"{redirect_url}&wa={store_whatsapp}"
 
         amount_kobo = int(amount_naira * 100)
-        email = f"{phone.replace('+', '')}@shopprhq.app"
+        email = f"{phone.replace('+', '')}@hobs.altekflo.xyz"
 
         payload = {
             "reference": reference,

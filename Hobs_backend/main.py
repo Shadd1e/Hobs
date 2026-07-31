@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 # --------------------------------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("🚀 Starting ShopprHQ API")
+    logger.info("🚀 Starting HoBS API")
 
     _startup_env = os.getenv("ENVIRONMENT", "production").lower()
     if _startup_env != "local":
@@ -87,7 +87,7 @@ async def lifespan(app: FastAPI):
         await cleanup_task
     except asyncio.CancelledError:
         pass
-    logger.info("🛑 Shutting down ShopprHQ API")
+    logger.info("🛑 Shutting down HoBS API")
 
 # --------------------------------------------------
 # Max request body size (defends against giant-payload DoS;
@@ -149,7 +149,7 @@ class MaxBodySizeMiddleware:
 # App Initialization
 # --------------------------------------------------
 app = FastAPI(
-    title="ShopprHQ API",
+    title="HoBS API",
     lifespan=lifespan,
 )
 
@@ -357,7 +357,7 @@ app.include_router(internal_cron_router)
 # in favor of its Next.js equivalent. Nothing in this backend links to these
 # routes anymore (emails/redirects all point at the frontend already); they
 # only exist so old bookmarks/links don't 404.
-APP_URL = os.getenv("APP_URL", "https://shopprhq.com").rstrip("/")
+APP_URL = os.getenv("APP_URL", "https://hobs.altekflo.xyz").rstrip("/")
 
 @app.get("/")
 async def root():

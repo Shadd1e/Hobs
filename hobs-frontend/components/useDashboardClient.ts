@@ -14,7 +14,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ApiError, listClients, type ClientSummary } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
@@ -22,6 +22,7 @@ const LAST_CLIENT_KEY = "hobs_last_client";
 
 export function useDashboardClient() {
   const router = useRouter();
+  const pathname = usePathname();
   const params = useSearchParams();
   const { session, loading: authLoading } = useAuth();
 
@@ -75,7 +76,7 @@ export function useDashboardClient() {
     }
     const next = new URLSearchParams(Array.from(params.entries()));
     next.set("client", id);
-    router.push(`?${next.toString()}`);
+    router.push(`${pathname}?${next.toString()}`);
   }
 
   const selectedClient = clients?.find((c) => c.id === clientId) ?? null;

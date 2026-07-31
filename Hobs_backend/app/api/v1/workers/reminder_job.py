@@ -36,7 +36,7 @@ _ABANDON_AFTER = timedelta(days=30)
 
 def _resume_url(resume_token):
     import os
-    app_url = os.getenv("APP_URL", "https://shopprhq.com")
+    app_url = os.getenv("APP_URL", "https://hobs.altekflo.xyz")
     return f"{app_url}/get-started?resume={resume_token}"
 
 

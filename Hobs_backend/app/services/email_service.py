@@ -5,10 +5,10 @@ Works on Railway — no SMTP ports needed, no firewall issues.
 
 Required env vars:
   BREVO_API_KEY                 Your Brevo API key (starts with xkeysib-)
-  SMTP_FROM_NAME                Display name e.g. ShopprHQ
+  SMTP_FROM_NAME                Display name e.g. HoBS
   SMTP_USER                     Your verified sender email in Brevo
-  APP_URL                       https://shopprhq.app
-  SHOPPRHQ_SUPPORT_WHATSAPP     e.g. 2349012345678
+  APP_URL                       https://hobs.altekflo.xyz
+  HOBS_SUPPORT_WHATSAPP     e.g. 2349012345678
 """
 
 import os
@@ -25,15 +25,15 @@ def _cfg():
     return {
         "api_key":    os.getenv("BREVO_API_KEY", ""),
         # FIX: was SMTP_FROM_NAME / SMTP_USER — Railway vars are BREVO_SENDER_NAME / BREVO_SENDER_EMAIL
-        "from_name":  os.getenv("BREVO_SENDER_NAME", os.getenv("SMTP_FROM_NAME", "ShopprHQ")),
+        "from_name":  os.getenv("BREVO_SENDER_NAME", os.getenv("SMTP_FROM_NAME", "HoBS")),
         "from_email": os.getenv("BREVO_SENDER_EMAIL", os.getenv("SMTP_USER", "")),
-        "app_url":    os.getenv("APP_URL", "https://shopprhq.com"),
-        # Base URL of the FastAPI backend itself (ap.shopprhq.com), as opposed
-        # to app_url (the Next.js frontend, shopprhq.com). Needed for links to
+        "app_url":    os.getenv("APP_URL", "https://hobs.altekflo.xyz"),
+        # Base URL of the FastAPI backend itself (hobs.shaddies.space), as opposed
+        # to app_url (the Next.js frontend, hobs.altekflo.xyz). Needed for links to
         # pages that main.py serves directly, e.g. /apply/whatsapp-number/{token}
         # — that route only exists on the backend, not on the frontend domain.
-        "api_base_url": os.getenv("API_BASE_URL", "https://ap.shopprhq.com"),
-        "support_wa": os.getenv("SHOPPRHQ_SUPPORT_WHATSAPP", ""),
+        "api_base_url": os.getenv("API_BASE_URL", "https://hobs.shaddies.space"),
+        "support_wa": os.getenv("HOBS_SUPPORT_WHATSAPP", ""),
     }
 
 
@@ -89,7 +89,7 @@ async def send_verification_email(
     - client_id is the auto-created Store ID
     - whatsapp_number is shown back to confirm it was received (optional)
     """
-    subject = "Your ShopprHQ verification code"
+    subject = "Your HoBS verification code"
 
     store_id_block = (
         f'''<div style="background:#F5F4F0;border-radius:8px;padding:10px 20px;margin-bottom:12px">
@@ -132,7 +132,7 @@ async def send_verification_email(
         <tr><td style="background:#111110;padding:32px 40px 28px;text-align:center">
           <div style="display:inline-block;width:44px;height:44px;background:#25D366;
             border-radius:11px;line-height:44px;text-align:center;font-size:22px;margin-bottom:12px">🛒</div>
-          <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-.02em">ShopprHQ</div>
+          <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-.02em">HoBS</div>
           <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:5px;
             letter-spacing:.08em;text-transform:uppercase">WhatsApp Commerce</div>
         </td></tr>
@@ -169,7 +169,7 @@ async def send_verification_email(
           </p>
         </td></tr>
         <tr><td style="padding:20px 40px;border-top:1px solid #eee;text-align:center">
-          <p style="margin:0;font-size:12px;color:#bbb">ShopprHQ by RACHWIN · WhatsApp Commerce · Nigeria</p>
+          <p style="margin:0;font-size:12px;color:#bbb">HoBS by AltekFlo · WhatsApp Commerce · Nigeria</p>
         </td></tr>
       </table>
     </td></tr>
@@ -180,7 +180,7 @@ async def send_verification_email(
     wa_text = f"WhatsApp number received: +{whatsapp_number}" if whatsapp_number else "No WhatsApp number submitted."
     store_text = f"Your Store ID: {client_id}" if client_id else ""
 
-    text = f"""Welcome to ShopprHQ, {merchant_name}!
+    text = f"""Welcome to HoBS, {merchant_name}!
 
 Your verification code: {token}
 (Expires in 30 minutes)
@@ -207,7 +207,7 @@ async def send_welcome_email(
     cfg           = _cfg()
     dashboard_url = f"{cfg['app_url']}/dashboard"
     first_name    = merchant_name.split()[0]
-    subject       = f"Welcome to ShopprHQ, {first_name}! Here's how to get started."
+    subject       = f"Welcome to HoBS, {first_name}! Here's how to get started."
 
     html = f"""<!DOCTYPE html>
 <html>
@@ -218,7 +218,7 @@ async def send_welcome_email(
       <table width="520" cellpadding="0" cellspacing="0"
         style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
         <tr><td style="background:#111110;padding:32px 40px 28px;text-align:center">
-          <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-.02em">ShopprHQ</div>
+          <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-.02em">HoBS</div>
           <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:5px;
             letter-spacing:.08em;text-transform:uppercase">WhatsApp Commerce</div>
         </td></tr>
@@ -227,7 +227,7 @@ async def send_welcome_email(
             You're in, {first_name}! 🎉
           </h1>
           <p style="margin:0 0 24px;font-size:15px;color:#555;line-height:1.6">
-            Your ShopprHQ account is verified and your store is ready. Here's what to do now
+            Your HoBS account is verified and your store is ready. Here's what to do now
             while your WhatsApp number is being set up.
           </p>
 
@@ -309,8 +309,8 @@ async def send_welcome_email(
         </td></tr>
         <tr><td style="padding:20px 40px;border-top:1px solid #eee;text-align:center">
           <p style="margin:0;font-size:12px;color:#bbb">
-            ShopprHQ by RACHWIN &middot; WhatsApp Commerce &middot; Nigeria<br>
-            Questions? <a href="mailto:hello@shopprhq.com" style="color:#25D366;text-decoration:none">hello@shopprhq.com</a>
+            HoBS by AltekFlo &middot; WhatsApp Commerce &middot; Nigeria<br>
+            Questions? <a href="mailto:hello@altekflo.xyz" style="color:#25D366;text-decoration:none">hello@altekflo.xyz</a>
           </p>
         </td></tr>
       </table>
@@ -321,7 +321,7 @@ async def send_welcome_email(
 
     text = f"""You're in, {first_name}!
 
-Your ShopprHQ account is verified. Here's what to do now:
+Your HoBS account is verified. Here's what to do now:
 
 1. Log in and add your products
    Head to your dashboard and add everything you sell.
@@ -338,7 +338,7 @@ Your ShopprHQ account is verified. Here's what to do now:
 Note: The store WhatsApp number you submitted must NOT currently be active
 on WhatsApp or WhatsApp Business App. Your specialist will guide you if needed.
 
-Questions? hello@shopprhq.com
+Questions? hello@altekflo.xyz
 """
     return await send_email(to_email, subject, html, text)
 
@@ -371,7 +371,7 @@ async def send_otp_requested_email(
       <table width="520" cellpadding="0" cellspacing="0"
         style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
         <tr><td style="background:#111110;padding:28px 40px;text-align:center">
-          <div style="font-size:24px;font-weight:700;color:#fff;letter-spacing:-.02em">ShopprHQ</div>
+          <div style="font-size:24px;font-weight:700;color:#fff;letter-spacing:-.02em">HoBS</div>
           <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:4px;
             letter-spacing:.08em;text-transform:uppercase">WhatsApp Activation</div>
         </td></tr>
@@ -413,7 +413,7 @@ async def send_otp_requested_email(
           </p>
         </td></tr>
         <tr><td style="padding:16px 40px;border-top:1px solid #eee;text-align:center">
-          <p style="margin:0;font-size:12px;color:#bbb">ShopprHQ by RACHWIN · WhatsApp Commerce · Nigeria</p>
+          <p style="margin:0;font-size:12px;color:#bbb">HoBS by AltekFlo · WhatsApp Commerce · Nigeria</p>
         </td></tr>
       </table>
     </td></tr>
@@ -543,7 +543,7 @@ async def send_store_live_email(
           </a>
         </td></tr>
         <tr><td style="padding:16px 40px;border-top:1px solid #eee;text-align:center">
-          <p style="margin:0;font-size:12px;color:#bbb">ShopprHQ by RACHWIN · WhatsApp Commerce · Nigeria</p>
+          <p style="margin:0;font-size:12px;color:#bbb">HoBS by AltekFlo · WhatsApp Commerce · Nigeria</p>
         </td></tr>
       </table>
     </td></tr>
@@ -597,13 +597,13 @@ async def send_store_created_email(
         notice_html = """
           <div style="background:#FFF8E1;border:1px solid #F59E0B;border-radius:10px;padding:14px 18px">
             <p style="margin:0;font-size:13px;color:#92400E;line-height:1.5">
-              ⚠️ A ShopprHQ agent will contact you within 24 hours to activate the WhatsApp
+              ⚠️ A HoBS agent will contact you within 24 hours to activate the WhatsApp
               number for this store. The number must <strong>not</strong> currently be on
               WhatsApp Business App.
             </p>
           </div>"""
         text_footer = (
-            "A ShopprHQ agent will contact you within 24 hours to complete WhatsApp onboarding.\n"
+            "A HoBS agent will contact you within 24 hours to complete WhatsApp onboarding.\n"
             "The number must not currently be on WhatsApp Business App."
         )
     else:
@@ -646,7 +646,7 @@ async def send_store_created_email(
       <table width="520" cellpadding="0" cellspacing="0"
         style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
         <tr><td style="background:#111110;padding:28px 40px;text-align:center">
-          <div style="font-size:24px;font-weight:700;color:#fff">ShopprHQ</div>
+          <div style="font-size:24px;font-weight:700;color:#fff">HoBS</div>
           <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:4px;
             letter-spacing:.08em;text-transform:uppercase">Store Created</div>
         </td></tr>
@@ -666,7 +666,7 @@ async def send_store_created_email(
           {notice_html}
         </td></tr>
         <tr><td style="padding:16px 40px;border-top:1px solid #eee;text-align:center">
-          <p style="margin:0;font-size:12px;color:#bbb">ShopprHQ by RACHWIN · WhatsApp Commerce · Nigeria</p>
+          <p style="margin:0;font-size:12px;color:#bbb">HoBS by AltekFlo · WhatsApp Commerce · Nigeria</p>
         </td></tr>
       </table>
     </td></tr>
@@ -674,7 +674,7 @@ async def send_store_created_email(
 </body>
 </html>"""
 
-    text = f"""New store created on your ShopprHQ account.
+    text = f"""New store created on your HoBS account.
 
 Store name: {store_name}
 Store ID:   {client_id}
@@ -695,7 +695,7 @@ async def send_password_reset_email(
 ) -> bool:
     cfg        = _cfg()
     first_name = merchant_name.split()[0]
-    subject    = "Your ShopprHQ password reset code"
+    subject    = "Your HoBS password reset code"
 
     html = f"""<!DOCTYPE html>
 <html>
@@ -706,14 +706,14 @@ async def send_password_reset_email(
       <table width="480" cellpadding="0" cellspacing="0"
         style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
         <tr><td style="background:#111110;padding:28px 40px;text-align:center">
-          <div style="font-size:24px;font-weight:700;color:#fff">ShopprHQ</div>
+          <div style="font-size:24px;font-weight:700;color:#fff">HoBS</div>
           <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:4px;
             letter-spacing:.08em;text-transform:uppercase">Password Reset</div>
         </td></tr>
         <tr><td style="padding:40px 40px 36px">
           <p style="margin:0 0 6px;font-size:16px;font-weight:700;color:#111">Hi {first_name},</p>
           <p style="margin:0 0 28px;font-size:14px;color:#777;line-height:1.6">
-            We received a request to reset your ShopprHQ merchant password.
+            We received a request to reset your HoBS merchant password.
             Use the code below to continue. It expires in <strong>10 minutes</strong>.
           </p>
 
@@ -733,7 +733,7 @@ async def send_password_reset_email(
           </div>
         </td></tr>
         <tr><td style="padding:16px 40px;border-top:1px solid #eee;text-align:center">
-          <p style="margin:0;font-size:12px;color:#bbb">ShopprHQ by RACHWIN · WhatsApp Commerce · Nigeria</p>
+          <p style="margin:0;font-size:12px;color:#bbb">HoBS by AltekFlo · WhatsApp Commerce · Nigeria</p>
         </td></tr>
       </table>
     </td></tr>
@@ -743,7 +743,7 @@ async def send_password_reset_email(
 
     text = f"""Hi {first_name},
 
-Your ShopprHQ password reset code is:
+Your HoBS password reset code is:
 
   {code}
 
@@ -780,7 +780,7 @@ async def send_store_login_alert(
       <table width="480" cellpadding="0" cellspacing="0"
         style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
         <tr><td style="background:#111110;padding:28px 40px;text-align:center">
-          <div style="font-size:24px;font-weight:700;color:#fff">ShopprHQ</div>
+          <div style="font-size:24px;font-weight:700;color:#fff">HoBS</div>
           <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:4px;
             letter-spacing:.08em;text-transform:uppercase">Security Alert</div>
         </td></tr>
@@ -811,7 +811,7 @@ async def send_store_login_alert(
           </a>
         </td></tr>
         <tr><td style="padding:16px 40px;border-top:1px solid #eee;text-align:center">
-          <p style="margin:0;font-size:12px;color:#bbb">ShopprHQ by RACHWIN · WhatsApp Commerce · Nigeria</p>
+          <p style="margin:0;font-size:12px;color:#bbb">HoBS by AltekFlo · WhatsApp Commerce · Nigeria</p>
         </td></tr>
       </table>
     </td></tr>
@@ -898,7 +898,7 @@ async def send_application_received_email(
       <table width="520" cellpadding="0" cellspacing="0"
         style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
         <tr><td style="background:#111110;padding:32px 40px 28px;text-align:center">
-          <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-.02em">ShopprHQ</div>
+          <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-.02em">HoBS</div>
           <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:5px;
             letter-spacing:.08em;text-transform:uppercase">WhatsApp Commerce</div>
         </td></tr>
@@ -907,7 +907,7 @@ async def send_application_received_email(
             Application received! ✅
           </h1>
           <p style="margin:0 0 20px;font-size:15px;color:#555;line-height:1.6">
-            Hi {first_name}, thanks for applying to use ShopprHQ for
+            Hi {first_name}, thanks for applying to use HoBS for
             <strong>{business_name}</strong>.
           </p>
           <p style="margin:0 0 20px;font-size:15px;color:#555;line-height:1.6">
@@ -927,7 +927,7 @@ async def send_application_received_email(
           </div>
         </td></tr>
         <tr><td style="padding:16px 40px;border-top:1px solid #eee;text-align:center">
-          <p style="margin:0;font-size:12px;color:#bbb">ShopprHQ · WhatsApp Commerce · Nigeria</p>
+          <p style="margin:0;font-size:12px;color:#bbb">HoBS · WhatsApp Commerce · Nigeria</p>
         </td></tr>
       </table>
     </td></tr>
@@ -937,7 +937,7 @@ async def send_application_received_email(
 
     text = f"""Hi {first_name},
 
-Thanks for applying to use ShopprHQ for {business_name}.
+Thanks for applying to use HoBS for {business_name}.
 
 Our team will review your application within 1–2 business days.
 
@@ -947,7 +947,7 @@ Once approved, you'll receive your login credentials by separate email.
 
 If you have any questions, just reply to this email.
 
-— The ShopprHQ Team
+— The HoBS Team
 """
     return await send_email(to_email, subject, html, text)
 
@@ -1008,21 +1008,21 @@ async def send_application_reminder_email(
     tier = {
         1: {
             "subject": f"Pick up where you left off, {first_name}",
-            "tone": f"You started applying to use ShopprHQ but didn't quite finish — "
+            "tone": f"You started applying to use HoBS but didn't quite finish — "
                     f"you just need to {step_copy['whats_left']}.",
         },
         2: {
-            "subject": "Still want to set up your store on ShopprHQ?",
+            "subject": "Still want to set up your store on HoBS?",
             "tone": f"Your application is still saved. {step_copy['detail']}",
         },
         3: {
-            "subject": "Last reminder: your ShopprHQ application is waiting",
+            "subject": "Last reminder: your HoBS application is waiting",
             "tone": f"This is our final reminder — after this we'll stop following up, "
                     f"but your progress stays saved if you come back on your own. "
                     f"{step_copy['detail']}",
         },
     }.get(reminder_number, {
-        "subject": "Continue your ShopprHQ application",
+        "subject": "Continue your HoBS application",
         "tone": f"Your application is still saved. {step_copy['detail']}",
     })
     copy = {"subject": tier["subject"], "lead": tier["tone"]}
@@ -1036,7 +1036,7 @@ async def send_application_reminder_email(
       <table width="520" cellpadding="0" cellspacing="0"
         style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
         <tr><td style="background:#111110;padding:32px 40px 28px;text-align:center">
-          <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-.02em">ShopprHQ</div>
+          <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-.02em">HoBS</div>
         </td></tr>
         <tr><td style="padding:40px 40px 32px">
           <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111">
@@ -1053,7 +1053,7 @@ async def send_application_reminder_email(
           </a>
         </td></tr>
         <tr><td style="padding:16px 40px;border-top:1px solid #eee;text-align:center">
-          <p style="margin:0;font-size:12px;color:#bbb">ShopprHQ · WhatsApp Commerce · Nigeria</p>
+          <p style="margin:0;font-size:12px;color:#bbb">HoBS · WhatsApp Commerce · Nigeria</p>
         </td></tr>
       </table>
     </td></tr>
@@ -1061,12 +1061,12 @@ async def send_application_reminder_email(
 </body>
 </html>"""
 
-    text = f"Hi {first_name},\n\n{copy['lead']}\n\nContinue here: {resume_url}\n\n— The ShopprHQ Team\n"
+    text = f"Hi {first_name},\n\n{copy['lead']}\n\nContinue here: {resume_url}\n\n— The HoBS Team\n"
 
     return await send_email(to_email, copy["subject"], html, text)
 
 
-# ───────────────────────────────────────────────────────────────────────────── — sent to the ShopprHQ team when a new application arrives
+# ───────────────────────────────────────────────────────────────────────────── — sent to the HoBS team when a new application arrives
 # NOTE: no longer called by apply_to_use(). The Slack alert + the admin
 # dashboard's "Pending Applications" panel cover this now, so a separate
 # team email would just be a third duplicate notification. Left defined
@@ -1118,7 +1118,7 @@ async def send_team_application_alert(
     # never be able to inject extra email headers via a raw subject line.
     _subj_biz  = biz_raw.replace("\r", "").replace("\n", " ")
     _subj_name = name_raw.replace("\r", "").replace("\n", " ")
-    subject = f"[ShopprHQ Application] {_subj_biz} — {_subj_name}"
+    subject = f"[HoBS Application] {_subj_biz} — {_subj_name}"
 
     def _row(label, value):
         return f"""<tr>
@@ -1165,7 +1165,7 @@ async def send_team_application_alert(
           </div>
         </td></tr>
         <tr><td style="padding:16px 40px;border-top:1px solid #eee;text-align:center">
-          <p style="margin:0;font-size:12px;color:#bbb">ShopprHQ Internal · Do not forward</p>
+          <p style="margin:0;font-size:12px;color:#bbb">HoBS Internal · Do not forward</p>
         </td></tr>
       </table>
     </td></tr>
@@ -1227,7 +1227,7 @@ async def send_approved_merchant_welcome_email(
       <table width="520" cellpadding="0" cellspacing="0"
         style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
         <tr><td style="background:#111110;padding:32px 40px 28px;text-align:center">
-          <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-.02em">ShopprHQ</div>
+          <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-.02em">HoBS</div>
           <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:5px;
             letter-spacing:.08em;text-transform:uppercase">WhatsApp Commerce</div>
         </td></tr>
@@ -1236,7 +1236,7 @@ async def send_approved_merchant_welcome_email(
             You're approved, {first_name}! 🎉
           </h1>
           <p style="margin:0 0 24px;font-size:15px;color:#555;line-height:1.6">
-            Your ShopprHQ account is ready. Click the button below to create your
+            Your HoBS account is ready. Click the button below to create your
             password and sign in. <strong>This link expires in 72 hours.</strong>
           </p>
 
@@ -1270,7 +1270,7 @@ async def send_approved_merchant_welcome_email(
           </p>
         </td></tr>
         <tr><td style="padding:16px 40px;border-top:1px solid #eee;text-align:center">
-          <p style="margin:0;font-size:12px;color:#bbb">ShopprHQ · WhatsApp Commerce · Nigeria</p>
+          <p style="margin:0;font-size:12px;color:#bbb">HoBS · WhatsApp Commerce · Nigeria</p>
         </td></tr>
       </table>
     </td></tr>
@@ -1281,7 +1281,7 @@ async def send_approved_merchant_welcome_email(
     support_line_text = f"+{support_wa}" if support_wa else "our team"
     text = f"""Hi {first_name},
 
-Your ShopprHQ account is ready. Create your password using the link below:
+Your HoBS account is ready. Create your password using the link below:
 
   {set_password_url}
 
@@ -1295,7 +1295,7 @@ What happens next:
 
 That WhatsApp message is how we'll reach you for the activation step — please reply when you see it.
 
-— The ShopprHQ Team
+— The HoBS Team
 """
     return await send_email(to_email, subject, html, text)
 
@@ -1310,7 +1310,7 @@ async def send_application_declined_email(
 ) -> bool:
     cfg        = _cfg()
     first_name = applicant_name.split()[0]
-    subject    = "An update on your ShopprHQ application"
+    subject    = "An update on your HoBS application"
 
     html = f"""<!DOCTYPE html>
 <html>
@@ -1321,14 +1321,14 @@ async def send_application_declined_email(
       <table width="520" cellpadding="0" cellspacing="0"
         style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
         <tr><td style="background:#111110;padding:32px 40px 28px;text-align:center">
-          <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-.02em">ShopprHQ</div>
+          <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-.02em">HoBS</div>
         </td></tr>
         <tr><td style="padding:40px 40px 32px">
           <h1 style="margin:0 0 12px;font-size:20px;font-weight:700;color:#111">
             Hi {first_name},
           </h1>
           <p style="margin:0 0 18px;font-size:15px;color:#555;line-height:1.6">
-            Thanks for your interest in ShopprHQ for <strong>{business_name}</strong>.
+            Thanks for your interest in HoBS for <strong>{business_name}</strong>.
             After review, we're not able to move forward with your application at this time.
           </p>
           <p style="margin:0;font-size:15px;color:#555;line-height:1.6">
@@ -1337,7 +1337,7 @@ async def send_application_declined_email(
           </p>
         </td></tr>
         <tr><td style="padding:16px 40px;border-top:1px solid #eee;text-align:center">
-          <p style="margin:0;font-size:12px;color:#bbb">ShopprHQ · WhatsApp Commerce · Nigeria</p>
+          <p style="margin:0;font-size:12px;color:#bbb">HoBS · WhatsApp Commerce · Nigeria</p>
         </td></tr>
       </table>
     </td></tr>
@@ -1347,10 +1347,10 @@ async def send_application_declined_email(
 
     text = f"""Hi {first_name},
 
-Thanks for your interest in ShopprHQ for {business_name}. After review, we're not able to move forward with your application at this time.
+Thanks for your interest in HoBS for {business_name}. After review, we're not able to move forward with your application at this time.
 
 You're welcome to apply again in the future if your circumstances change. Thanks for considering us.
 
-— The ShopprHQ Team
+— The HoBS Team
 """
     return await send_email(to_email, subject, html, text)

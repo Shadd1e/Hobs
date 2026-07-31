@@ -1,10 +1,11 @@
 "use client";
 
 /**
- * Room grid — GET /hotel/dashboard/rooms?client_id=... (hotel_dashboard.py:100)
- * Click a room -> GET /hotel/dashboard/rooms/{room_id} for the admin
- * drill-down (guest name, dates, who logged it). Both use the merchant
- * bearer token, same as everything else in this file.
+ * The "Rooms" tab (root of /dashboard) — today's free/booked status per
+ * room, with a click-through admin detail for booked ones.
+ * GET /hotel/dashboard/rooms?client_id=... (grid) and GET
+ * /hotel/dashboard/rooms/{room_id}?client_id=... (drill-down),
+ * hotel_dashboard.py:100-133.
  */
 
 import { Suspense, useEffect, useState } from "react";
@@ -13,12 +14,12 @@ import {
   dashboardRoomDetail,
   dashboardRooms,
   type RoomAdminDetail,
-  type RoomStatusRead,
+  type RoomStatusRow,
 } from "@/lib/api";
 import { DashboardChrome } from "@/components/DashboardChrome";
 import { useDashboardClient } from "@/components/useDashboardClient";
 
-export default function DashboardPage() {
+export default function RoomGridPage() {
   return (
     <Suspense fallback={<main className="page">Loading&hellip;</main>}>
       <RoomGrid />
@@ -37,47 +38,47 @@ function RoomGrid() {
     selectClient,
   } = useDashboardClient();
 
-  const [rooms, setRooms] = useState<RoomStatusRead[] | null>(null);
-  const [roomsError, setRoomsError] = useState<string | null>(null);
+  const [rooms, setRooms] = useState<RoomStatusRow[] | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
   const [loadingRooms, setLoadingRooms] = useState(false);
 
-  const [detailRoomId, setDetailRoomId] = useState<string | null>(null);
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [detail, setDetail] = useState<RoomAdminDetail | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
-  useEffect(() => {
+  function loadRooms() {
     if (!session || !clientId) {
       setRooms(null);
       return;
     }
-    let cancelled = false;
     setLoadingRooms(true);
-    setRoomsError(null);
+    setListError(null);
     dashboardRooms(session.access_token, clientId)
-      .then((result) => {
-        if (!cancelled) setRooms(result);
-      })
-      .catch((err) => {
-        if (!cancelled) setRoomsError(err instanceof ApiError ? err.message : "Couldn't load rooms.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingRooms(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [session, clientId]);
+      .then(setRooms)
+      .catch((err) => setListError(err instanceof ApiError ? err.message : "Couldn't load rooms."))
+      .finally(() => setLoadingRooms(false));
+  }
 
-  function openDetail(roomId: string) {
+  useEffect(loadRooms, [session, clientId]);
+
+  function openRoom(roomId: string) {
     if (!session || !clientId) return;
-    setDetailRoomId(roomId);
+    setSelectedRoomId(roomId);
     setDetail(null);
     setDetailError(null);
     setLoadingDetail(true);
-    dashboardRoomDetail(session.access_token, clientId, roomId)
-      .then((result) => setDetail(result))
-      .catch((err) => setDetailError(err instanceof ApiError ? err.message : "Couldn't load room detail."))
+    dashboardRoomDetail(session.access_token, roomId, clientId)
+      .then(setDetail)
+      .catch((err) =>
+        setDetailError(
+          err instanceof ApiError
+            ? err.status === 403
+              ? "You don't have permission to view guest details."
+              : err.message
+            : "Couldn't load this room."
+        )
+      )
       .finally(() => setLoadingDetail(false));
   }
 
@@ -95,82 +96,77 @@ function RoomGrid() {
       selectClient={selectClient}
     >
       <h1>Rooms</h1>
-      <p className="subtitle">Today&rsquo;s status at a glance. Click a booked room for guest detail.</p>
+      <p className="subtitle">Today&rsquo;s status for every room. Click a booked room for guest details.</p>
 
-      {loadingRooms && <p className="dash-hint">Loading rooms&hellip;</p>}
-      {roomsError && <div className="banner-error">{roomsError}</div>}
-
-      {rooms && rooms.length === 0 && (
-        <p className="dash-hint">
-          No rooms set up yet. Add room types and rooms from the &ldquo;Room types&rdquo; and
-          &ldquo;Manage rooms&rdquo; tabs.
-        </p>
-      )}
+      {loadingRooms && <p className="dash-hint">Loading&hellip;</p>}
+      {listError && <div className="banner-error">{listError}</div>}
+      {rooms && rooms.length === 0 && <p className="dash-hint">No rooms yet — add some under &ldquo;Manage rooms&rdquo;.</p>}
 
       {rooms && rooms.length > 0 && (
         <div className="room-grid">
           {rooms.map((room) => (
             <button
               key={room.id}
-              className={`room-card ${room.is_booked_today ? "booked" : "free"}${
-                !room.is_active ? " inactive" : ""
+              className={`room-card ${room.is_booked_today ? "room-card-booked" : "room-card-free"}${
+                !room.is_active ? " room-card-inactive" : ""
               }`}
-              onClick={() => openDetail(room.id)}
+              onClick={() => room.is_booked_today && openRoom(room.id)}
+              disabled={!room.is_booked_today}
             >
-              <span className="room-number">{room.room_number}</span>
-              <span className="room-type">{room.room_type_name ?? "No type"}</span>
-              <span className="room-status-pill">
-                {!room.is_active ? "Inactive" : room.is_booked_today ? "Booked" : "Free"}
-              </span>
+              <div className="room-card-number">{room.room_number}</div>
+              <div className="room-card-type">{room.room_type_name ?? "No room type"}</div>
+              <div className="room-card-status">{room.is_booked_today ? "Booked today" : "Free today"}</div>
+              {!room.is_active && <div className="room-card-flag">Inactive</div>}
             </button>
           ))}
         </div>
       )}
 
-      {detailRoomId && (
-        <div className="modal-backdrop" onClick={() => setDetailRoomId(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setDetailRoomId(null)} aria-label="Close">
-              &times;
+      {selectedRoomId && (
+        <div className="dash-panel" style={{ marginTop: 24 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h2 style={{ margin: 0 }}>Room detail</h2>
+            <button className="btn-link" onClick={() => setSelectedRoomId(null)}>
+              Close
             </button>
-            {loadingDetail && <p className="dash-hint">Loading&hellip;</p>}
-            {detailError && <div className="banner-error">{detailError}</div>}
-            {detail && (
-              <>
-                <h2>Room {detail.room_number}</h2>
-                {detail.booking ? (
-                  <dl className="detail-list">
-                    <dt>Guest</dt>
-                    <dd>{detail.booking.guest_name ?? "—"}</dd>
-                    <dt>Phone</dt>
-                    <dd>{detail.booking.guest_phone ?? "—"}</dd>
-                    <dt>Check-in</dt>
-                    <dd>{detail.booking.check_in}</dd>
-                    <dt>Check-out</dt>
-                    <dd>{detail.booking.check_out}</dd>
-                    <dt>Nights</dt>
-                    <dd>{detail.booking.nights}</dd>
-                    <dt>Total</dt>
-                    <dd>&#8358;{Number(detail.booking.total_amount).toLocaleString()}</dd>
-                    <dt>Paid</dt>
-                    <dd>
-                      {detail.booking.amount_paid != null
-                        ? `₦${Number(detail.booking.amount_paid).toLocaleString()}`
-                        : "—"}
-                    </dd>
-                    <dt>Source</dt>
-                    <dd>{detail.booking.source}</dd>
-                    <dt>Logged by</dt>
-                    <dd>{detail.booking.logged_by_staff_phone ?? "—"}</dd>
-                    <dt>Booking code</dt>
-                    <dd>{detail.booking.booking_code}</dd>
-                  </dl>
-                ) : (
-                  <p className="dash-hint">This room is free today.</p>
-                )}
-              </>
-            )}
           </div>
+
+          {loadingDetail && <p className="dash-hint">Loading&hellip;</p>}
+          {detailError && <div className="banner-error">{detailError}</div>}
+
+          {detail && (
+            <div>
+              <h3>Room {detail.room_number}</h3>
+              {!detail.booking ? (
+                <p className="subtitle">This room is free today.</p>
+              ) : (
+                <dl className="detail-list">
+                  <dt>Guest</dt>
+                  <dd>{detail.booking.guest_name ?? "—"}</dd>
+                  <dt>Phone</dt>
+                  <dd>{detail.booking.guest_phone ?? "—"}</dd>
+                  <dt>Dates</dt>
+                  <dd>
+                    {detail.booking.check_in} &rarr; {detail.booking.check_out} ({detail.booking.nights} nights)
+                  </dd>
+                  <dt>Total</dt>
+                  <dd>&#8358;{Number(detail.booking.total_amount).toLocaleString()}</dd>
+                  <dt>Paid</dt>
+                  <dd>
+                    {detail.booking.amount_paid != null
+                      ? `₦${Number(detail.booking.amount_paid).toLocaleString()}`
+                      : "—"}
+                  </dd>
+                  <dt>Source</dt>
+                  <dd>{detail.booking.source}</dd>
+                  <dt>Logged by staff</dt>
+                  <dd>{detail.booking.logged_by_staff_phone ?? "—"}</dd>
+                  <dt>Booking code</dt>
+                  <dd>{detail.booking.booking_code}</dd>
+                </dl>
+              )}
+            </div>
+          )}
         </div>
       )}
     </DashboardChrome>

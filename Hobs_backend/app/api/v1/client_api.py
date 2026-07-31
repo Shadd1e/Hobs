@@ -134,7 +134,7 @@ async def create_client_with_password(
 ):
     """
     Merchant creates a new store. The Store ID is auto-assigned by the system
-    and sent to the merchant via email. A ShopprHQ agent will contact the
+    and sent to the merchant via email. A HoBS agent will contact the
     merchant to complete WhatsApp onboarding.
     """
     merchant_id = _require_merchant(request)

@@ -69,7 +69,7 @@ async def create_merchant_disabled():
         status_code=410,
         detail=(
             "Self-registration is no longer available. "
-            "Please apply at shopprhq.com — our team will review and create your account."
+            "Please apply at hobs.altekflo.xyz — our team will review and create your account."
         ),
     )
 

@@ -688,7 +688,7 @@ class Humanizer:
     @classmethod
     def payment_confirmed(cls, order_code: str, store_name: Optional[str] = None) -> str:
         header  = f"*{store_name}*\n" if store_name else ""
-        powered = "\n_Powered by ShopprHQ_"
+        powered = "\n_Powered by HoBS_"
         return cls._pick([
             f"{header}✅ Payment received! Order *{order_code}* is confirmed. Thank you!{powered}",
             f"{header}Got your payment! Order *{order_code}* is all set. Thanks for shopping with us!{powered}",
@@ -705,7 +705,7 @@ class Humanizer:
     ) -> str:
         total_str = cls._format_currency(total)
         header  = f"*{store_name}*\n" if store_name else ""
-        powered = "\n_Powered by ShopprHQ_"
+        powered = "\n_Powered by HoBS_"
         return cls._pick([
             f"{header}✅ Cash payment confirmed!\n\n"
             f"*Order {order_code}*\n{items_lines}\n\n"

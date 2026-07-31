@@ -4,7 +4,7 @@ from pydantic import field_validator
 
 class Settings(BaseSettings):
     # Core
-    PROJECT_NAME: str = "ShopprHQ"
+    PROJECT_NAME: str = "HoBS"
     API_V1_STR: str = "/api/v1"
 
     # Database

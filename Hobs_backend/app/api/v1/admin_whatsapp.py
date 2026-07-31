@@ -105,7 +105,7 @@ def _validate_number_local(digits: str):
         if digits.startswith(prefix):
             return (
                 "This looks like a toll-free or VoIP number. "
-                "ShopprHQ requires a regular mobile number that can receive SMS or calls."
+                "HoBS requires a regular mobile number that can receive SMS or calls."
             )
     return None
 
@@ -143,7 +143,7 @@ def _cfg() -> dict:
         "admin_secret": os.getenv("ADMIN_SECRET", ""),
         "system_token": os.getenv("META_SYSTEM_TOKEN", ""),
         "waba_id":      os.getenv("META_WABA_ID", ""),
-        "app_url":      os.getenv("APP_URL", "https://shopprhq.com"),
+        "app_url":      os.getenv("APP_URL", "https://hobs.altekflo.xyz"),
         "verify_token": os.getenv("META_VERIFY_TOKEN", ""),
     }
 
@@ -165,7 +165,7 @@ async def _require_admin(request: Request):
 
 @router.get("")
 async def serve_admin_page():
-    app_url = os.getenv("APP_URL", "https://shopprhq.com").rstrip("/")
+    app_url = os.getenv("APP_URL", "https://hobs.altekflo.xyz").rstrip("/")
     return RedirectResponse(url=f"{app_url}/admin", status_code=308)
 
 

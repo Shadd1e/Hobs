@@ -25,6 +25,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useRouter } from "next/navigation";
 import { getMe } from "./api";
 
 const STORAGE_KEY = "hobs_merchant_session";
@@ -117,4 +118,28 @@ export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within <AuthProvider>");
   return ctx;
+}
+
+/**
+ * Redirects to /login (or /verify-email if the gate isn't cleared) when
+ * there's no valid session. Returns the session once it's confirmed
+ * present, or null while that's still being decided — callers should
+ * render a loading state for null and only render real content once they
+ * have a session object.
+ */
+export function useRequireMerchant(): MerchantSession | null {
+  const { session, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (loading) return;
+    if (!session) {
+      router.replace("/login");
+    } else if (!session.email_verified) {
+      router.replace("/verify-email");
+    }
+  }, [loading, session, router]);
+
+  if (loading || !session || !session.email_verified) return null;
+  return session;
 }

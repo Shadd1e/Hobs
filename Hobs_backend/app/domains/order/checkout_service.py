@@ -355,7 +355,7 @@ class CheckoutService:
             "callback_url": redirect_url,
             "customer": {
                 "phone": phone,
-                "email": f"{phone.replace('+', '')}@shopprhq.app",
+                "email": f"{phone.replace('+', '')}@hobs.altekflo.xyz",
             },
             "channels": ["card", "bank", "ussd", "bank_transfer", "mobile_money"],
         }

@@ -26,6 +26,9 @@ import {
   applyStepTwo,
   type ResumeState,
 } from "@/lib/api";
+import { SiteHeader } from "@/components/SiteHeader";
+
+const STEP_LABELS = ["Contact", "Business", "Verify", "Terms"];
 
 const TERMS_VERSION = "v1"; // bump when terms copy changes; must match what's shown to the user
 
@@ -33,7 +36,14 @@ type WizardData = Partial<ResumeState>;
 
 export default function GetStartedPage() {
   return (
-    <Suspense fallback={<main className="page">Loading&hellip;</main>}>
+    <Suspense
+      fallback={
+        <>
+          <SiteHeader variant="slim" />
+          <main className="wizard-shell">Loading&hellip;</main>
+        </>
+      }
+    >
       <Wizard />
     </Suspense>
   );
@@ -90,38 +100,59 @@ function Wizard() {
 
   if (submitted) {
     return (
-      <main className="page">
-        <h1>Application submitted</h1>
-        <p className="subtitle">
-          Thanks — we&rsquo;ve got your application. Our team will review it
-          and reach out by email or WhatsApp within 1&ndash;2 business days.
-          Once approved, you&rsquo;ll get an email to set your password and
-          sign in.
-        </p>
-      </main>
+      <>
+        <SiteHeader variant="slim" />
+        <main className="wizard-shell">
+          <div className="wizard-card">
+            <h1>Application submitted</h1>
+            <p className="subtitle">
+              Thanks — we&rsquo;ve got your application. Our team will review
+              it and reach out by email or WhatsApp within 1&ndash;2 business
+              days. Once approved, you&rsquo;ll get an email to set your
+              password and sign in.
+            </p>
+          </div>
+        </main>
+      </>
     );
   }
 
   if (loadingResume) {
-    return <main className="page">Loading your application&hellip;</main>;
+    return (
+      <>
+        <SiteHeader variant="slim" />
+        <main className="wizard-shell">
+          <div className="wizard-card">Loading your application&hellip;</div>
+        </main>
+      </>
+    );
   }
 
   if (resumeError) {
     return (
-      <main className="page">
-        <h1>We couldn&rsquo;t open that application</h1>
-        <p className="banner-error">{resumeError}</p>
-        <button className="btn" onClick={() => (window.location.href = "/get-started")}>
-          Start a new application
-        </button>
-      </main>
+      <>
+        <SiteHeader variant="slim" />
+        <main className="wizard-shell">
+          <div className="wizard-card">
+            <h1>We couldn&rsquo;t open that application</h1>
+            <p className="banner-error">{resumeError}</p>
+            <button className="btn" onClick={() => (window.location.href = "/get-started")}>
+              Start a new application
+            </button>
+          </div>
+        </main>
+      </>
     );
   }
 
   return (
-    <main className="page">
-      <h1>Apply to onboard your hotel</h1>
-      <StepIndicator step={step} />
+    <>
+      <SiteHeader variant="slim" />
+      <main className="wizard-shell">
+        <div className="wizard-card">
+          <p className="eyebrow">Application · Step {step} of 4</p>
+          <h1>Apply to onboard your hotel</h1>
+          <StepIndicator step={step} />
 
       {step === 1 && (
         <StepOne
@@ -156,20 +187,31 @@ function Wizard() {
         />
       )}
 
-      {step === 4 && token && (
-        <StepFour token={token} onDone={() => setSubmitted(true)} />
-      )}
-    </main>
+          {step === 4 && token && (
+            <StepFour token={token} onDone={() => setSubmitted(true)} />
+          )}
+        </div>
+      </main>
+    </>
   );
 }
 
 function StepIndicator({ step }: { step: number }) {
   return (
-    <div className="steps" aria-label={`Step ${step} of 4`}>
-      {[1, 2, 3, 4].map((n) => (
-        <div key={n} className={`step-dot ${n <= step ? "active" : ""}`} />
-      ))}
-    </div>
+    <>
+      <div className="steps" aria-label={`Step ${step} of 4`}>
+        {[1, 2, 3, 4].map((n) => (
+          <div key={n} className={`step-dot ${n <= step ? "active" : ""}`} />
+        ))}
+      </div>
+      <div className="wizard-step-labels">
+        {STEP_LABELS.map((label, i) => (
+          <span key={label} className={i + 1 === step ? "current" : ""}>
+            {label}
+          </span>
+        ))}
+      </div>
+    </>
   );
 }
 

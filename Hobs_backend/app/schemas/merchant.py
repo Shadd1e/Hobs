@@ -148,10 +148,15 @@ class ApplyStepTwo(BaseModel):
 class ApplyStepThree(BaseModel):
     """Step 3: identity / business verification."""
     # Registered businesses supply a CAC number; unregistered use BVN or NIN.
+    # Verification is optional — applicants can skip it and finish the wizard
+    # anyway. skip_verification=True is the explicit "I'll do this later"
+    # path; see apply_wizard_step_three in api/v1/merchant.py for what that
+    # sets in motion (7-day reminder sequence, eventual admin nudge).
     cac_number: Optional[str] = None
     verification_method: Optional[str] = Field(None, pattern=r"^(bvn|nin)$")
     bvn: Optional[str] = None
     nin: Optional[str] = None
+    skip_verification: bool = False
 
 
 class ApplyStepFour(BaseModel):

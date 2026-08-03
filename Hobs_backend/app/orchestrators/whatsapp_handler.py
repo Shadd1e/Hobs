@@ -315,6 +315,38 @@ async def handle_whatsapp_message(
     if not user_text:
         return
 
+    # ── Verification grace period: messaging suspension ─────────────────────
+    # Set by an admin (POST /admin/whatsapp-setup/merchants/{id}/suspend-messaging)
+    # when a merchant still hasn't submitted CAC/BVN/NIN well past the 7-day
+    # grace period. Everything else about the account keeps working; this
+    # only stops the bot from replying. We still send the customer one
+    # graceful message rather than going silent, and skip the AI pipeline
+    # entirely so a suspended merchant doesn't burn LLM calls either.
+    try:
+        from sqlalchemy import select as _select
+        from app.models.merchant import Merchant
+
+        async with AsyncSessionLocal() as _db:
+            _res = await _db.execute(
+                _select(Merchant.messaging_suspended_at).where(Merchant.id == merchant_id)
+            )
+            _suspended_at = _res.scalar_one_or_none()
+
+        if _suspended_at is not None:
+            await send_whatsapp_message(
+                to_number=user_phone,
+                message=(
+                    "Thanks for reaching out! This store is temporarily unable "
+                    "to receive WhatsApp orders while the owner completes a "
+                    "quick verification step. Please try again shortly."
+                ),
+                phone_number_id=phone_number_id,
+            )
+            return
+    except Exception:
+        # Never let the suspension check itself take the bot down.
+        logger.exception("Messaging-suspension check failed for merchant %s — allowing message through", merchant_id)
+
     # UX-1: fire typing indicator immediately so the customer sees activity
     # during the 2-5 seconds of lock acquisition + LLM classification.
     try:

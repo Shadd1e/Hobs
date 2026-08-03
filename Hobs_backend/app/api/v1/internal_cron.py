@@ -63,7 +63,24 @@ async def run_checkout_reminders(x_cron_secret: str = Header(default="")):
     return result
 
 
-@router.post("/weekly-staff-digest")
+@router.post("/verification-grace-reminders")
+async def run_verification_grace_reminders(x_cron_secret: str = Header(default="")):
+    """
+    Point a scheduler at this roughly hourly, same as onboarding-reminders.
+    Sends the day 2/4/6/7am/7pm verification nudge sequence to applicants
+    who skipped CAC/BVN/NIN, and fires the day-7 Slack + admin-dashboard
+    alert once the sequence runs out with no verification submitted.
+
+        curl -X POST https://<your-api-domain>/internal/cron/verification-grace-reminders \\
+             -H "X-Cron-Secret: $CRON_SECRET"
+    """
+    _check_cron_secret(x_cron_secret)
+
+    from app.api.v1.workers.verification_grace_job import send_verification_grace_reminders
+
+    async with AsyncSessionLocal() as db:
+        result = await send_verification_grace_reminders(db)
+    return result
 async def run_weekly_staff_digest(x_cron_secret: str = Header(default="")):
     """Point a scheduler at this once a week (e.g. Monday morning)."""
     _check_cron_secret(x_cron_secret)

@@ -1066,7 +1066,144 @@ async def send_application_reminder_email(
     return await send_email(to_email, copy["subject"], html, text)
 
 
-# ───────────────────────────────────────────────────────────────────────────── — sent to the HoBS team when a new application arrives
+# ─────────────────────────────────────────────────────────────────────────────
+# VERIFICATION GRACE PERIOD — 5 distinct emails sent by
+# app/api/v1/workers/verification_grace_job.py to applicants who finished
+# the wizard without submitting CAC/BVN/NIN. Cadence: day 2, day 4, day 6,
+# day 7 morning, day 7 evening. Each one is written fresh — no shared
+# boilerplate paragraph — so the sequence reads like a real person checking
+# in, not a repeating cron job. Tone stays warm throughout, even at #5:
+# the account is never deactivated, only WhatsApp messaging pauses, and
+# it's instantly reversible the moment they verify.
+# ─────────────────────────────────────────────────────────────────────────────
+_GRACE_COPY = {
+    1: {  # day 2 — light, no pressure yet
+        "subject": "One small thing left on your HoBS account",
+        "heading": "Almost fully set up",
+        "body": (
+            "Just a friendly note — your HoBS account is live and working great, "
+            "but we noticed you skipped adding your CAC or NIN when you applied. "
+            "Totally fine, it happens. Whenever you get a free minute, adding it "
+            "takes about two minutes and keeps everything running smoothly long-term."
+        ),
+        "cta": "Add my verification →",
+        "footnote": "No rush at all — just wanted to put it on your radar.",
+    },
+    2: {  # day 4 — first real mention of the window
+        "subject": "Heads up: 3 days left on your verification window",
+        "heading": "Still time to sort this",
+        "body": (
+            "Quick update — it's been a few days since you set up your HoBS "
+            "account, and your CAC/NIN is still outstanding. Here's the honest "
+            "version: after day 7, WhatsApp messaging pauses on your account "
+            "until it's added. Nothing else is affected, and it's a two-minute "
+            "fix whenever you're ready — you've got 3 days left to knock it out "
+            "before that kicks in."
+        ),
+        "cta": "Verify now — 2 minutes →",
+        "footnote": "Your account stays exactly as it is otherwise. This is the only thing standing between now and a fully unlocked account.",
+    },
+    3: {  # day 6 — urgency building, still kind
+        "subject": "Tomorrow's the deadline for WhatsApp messaging",
+        "heading": "One day to go",
+        "body": (
+            "We don't want this to catch you off guard: tomorrow marks 7 days "
+            "since your account went live, and WhatsApp messaging will pause "
+            "until your CAC or NIN is on file. Everything else — your dashboard, "
+            "orders, payments — keeps working exactly as before. It's genuinely "
+            "a quick step, and the moment you complete it, messaging switches "
+            "back on immediately."
+        ),
+        "cta": "Verify before tomorrow →",
+        "footnote": "Your account is never deactivated — this only affects WhatsApp messaging, and only until you verify.",
+    },
+    4: {  # day 7 AM — today's the day, still reassuring
+        "subject": "Today's the day — here's what happens",
+        "heading": "This is happening today",
+        "body": (
+            "Today is day 7. If your CAC or NIN isn't added by tonight, WhatsApp "
+            "messaging on your HoBS account will pause. We know that sounds "
+            "alarming, so to be clear: your account is not being deactivated, "
+            "your data isn't going anywhere, and nothing else about your setup "
+            "changes. The pause lifts the instant you verify — even if that's "
+            "next week. We'd just rather you didn't lose messaging over "
+            "something this quick to fix."
+        ),
+        "cta": "Verify right now →",
+        "footnote": "This is a 2-minute form. You've got the rest of today.",
+    },
+    5: {  # day 7 PM — last call, still warm and clear
+        "subject": "Last call today — exactly what to expect",
+        "heading": "Final reminder for today",
+        "body": (
+            "This is our last nudge before WhatsApp messaging pauses on your "
+            "account tonight. One more time, so it's totally clear: your account "
+            "stays active, your dashboard and orders keep working, and this is "
+            "fully reversible — the moment you add your CAC or NIN, messaging "
+            "turns back on right away, no waiting, no review queue. If tonight "
+            "isn't a good time, that's okay too — just come back whenever you're "
+            "ready and pick up exactly where you left off."
+        ),
+        "cta": "Verify before tonight →",
+        "footnote": "Whenever you're ready — even after tonight — this switches messaging back on immediately.",
+    },
+}
+
+
+async def send_verification_grace_email(
+    to_email: str,
+    full_name: str,
+    resume_url: str,
+    reminder_number: int,
+    business_name: str = None,
+) -> bool:
+    first_name = (full_name or "there").split()[0]
+    copy = _GRACE_COPY.get(reminder_number, _GRACE_COPY[1])
+    biz_line = f" for {business_name}" if business_name else ""
+
+    html = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#F5F4F0;font-family:'DM Sans',Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F4F0;padding:40px 20px">
+    <tr><td align="center">
+      <table width="520" cellpadding="0" cellspacing="0"
+        style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
+        <tr><td style="background:#111110;padding:32px 40px 28px;text-align:center">
+          <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-.02em">HoBS</div>
+        </td></tr>
+        <tr><td style="padding:40px 40px 32px">
+          <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111">
+            {copy['heading']}
+          </h1>
+          <p style="margin:0 0 20px;font-size:15px;color:#555;line-height:1.65">
+            Hi {first_name}, {copy['body']}
+          </p>
+          <a href="{resume_url}"
+            style="display:inline-block;background:#111;color:#fff;text-align:center;
+              padding:12px 22px;border-radius:8px;font-weight:600;font-size:14px;
+              text-decoration:none">
+            {copy['cta']}
+          </a>
+          <p style="margin:20px 0 0;font-size:12px;color:#999;line-height:1.6">
+            {copy['footnote']}
+          </p>
+        </td></tr>
+        <tr><td style="padding:16px 40px;border-top:1px solid #eee;text-align:center">
+          <p style="margin:0;font-size:12px;color:#bbb">HoBS · WhatsApp Commerce · Nigeria</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"""
+
+    text = (
+        f"Hi {first_name},\n\n{copy['body']}\n\n"
+        f"Verify here{biz_line}: {resume_url}\n\n{copy['footnote']}\n\n— The HoBS Team\n"
+    )
+
+    return await send_email(to_email, copy["subject"], html, text)
 # NOTE: no longer called by apply_to_use(). The Slack alert + the admin
 # dashboard's "Pending Applications" panel cover this now, so a separate
 # team email would just be a third duplicate notification. Left defined

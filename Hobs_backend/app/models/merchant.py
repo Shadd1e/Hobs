@@ -36,6 +36,16 @@ class Merchant(Base):
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
+    # Set by an admin (POST /admin/whatsapp-setup/merchants/{id}/suspend-messaging)
+    # when a merchant still hasn't submitted NIN/CAC verification well past the
+    # 7-day grace period. Blocks outbound WhatsApp messaging only — everything
+    # else (dashboard, orders, payments) keeps working. Cleared the moment the
+    # merchant submits verification, or by an admin manually unsuspending.
+    messaging_suspended_at = Column(
+        DateTime(timezone=True), nullable=True,
+        comment="Non-null = outbound WhatsApp messaging is blocked for this merchant.",
+    )
+
     # ── Relationships ──────────────────────────────────────────────────
     clients = relationship(
         "Client",

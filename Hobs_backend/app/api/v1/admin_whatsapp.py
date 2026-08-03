@@ -1061,6 +1061,9 @@ async def list_applications(request: Request, db: AsyncSession = Depends(get_db)
                 "verification_method":   a.verification_method,
                 "verification_status":   a.verification_status,
                 "transaction_limit":     float(a.transaction_limit) if a.transaction_limit is not None else None,
+                "verification_skipped_at": a.verification_skipped_at.isoformat() if a.verification_skipped_at else None,
+                "verification_reminder_count": a.verification_reminder_count,
+                "needs_verification_review": a.verification_admin_alert_sent_at is not None and a.verification_method is None,
             }
             for a in apps
         ]
@@ -1170,3 +1173,92 @@ async def reject_application(
         logger.warning("Decline email failed (non-fatal): %s", e)
 
     return {"ok": True, "id": application_id, "status": "rejected"}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# VERIFICATION GRACE PERIOD — manual messaging suspension + admin nudge list
+#
+# The verification_grace_job (app/api/v1/workers/verification_grace_job.py)
+# deliberately does NOT auto-suspend anyone. It sends the applicant reminder
+# emails and, once those run out with no verification, posts a Slack alert
+# and flags the application (needs_verification_review in GET /applications).
+# An admin decides from there whether to actually pause messaging on the
+# merchant, using the two endpoints below.
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.get("/verification-alerts", tags=["Admin — Merchant Approval"])
+async def list_verification_alerts(request: Request, db: AsyncSession = Depends(get_db)):
+    """
+    Applications whose 7-day verification grace period has expired with no
+    CAC/BVN/NIN on file — the day-7 Slack alert already fired for these.
+    Powers a notification badge on the admin dashboard.
+    """
+    await _require_admin(request)
+    from app.models.merchant_application import MerchantApplication
+
+    result = await db.execute(
+        select(MerchantApplication).where(
+            MerchantApplication.verification_admin_alert_sent_at.is_not(None),
+            MerchantApplication.verification_method.is_(None),
+        ).order_by(MerchantApplication.verification_admin_alert_sent_at.desc())
+    )
+    apps = result.scalars().all()
+    return {
+        "count": len(apps),
+        "applications": [
+            {
+                "id":                  a.id,
+                "business_name":       a.business_name,
+                "full_name":           a.full_name,
+                "email":               a.email,
+                "status":              a.status,
+                "merchant_id":         a.merchant_id,
+                "verification_skipped_at": a.verification_skipped_at.isoformat() if a.verification_skipped_at else None,
+                "alerted_at":          a.verification_admin_alert_sent_at.isoformat(),
+            }
+            for a in apps
+        ],
+    }
+
+
+@router.post("/merchants/{merchant_id}/suspend-messaging", tags=["Admin — Merchant Approval"])
+async def suspend_merchant_messaging(
+    merchant_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(_require_admin),
+):
+    """Admin-only. Blocks outbound WhatsApp messaging for this merchant until
+    they submit CAC/BVN/NIN or an admin unsuspends them. Nothing else about
+    the account is affected."""
+    from datetime import datetime, timezone
+    from app.models.merchant import Merchant
+
+    res = await db.execute(select(Merchant).where(Merchant.id == merchant_id))
+    merchant = res.scalar_one_or_none()
+    if not merchant:
+        raise HTTPException(status_code=404, detail="Merchant not found")
+
+    merchant.messaging_suspended_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"ok": True, "merchant_id": merchant_id, "messaging_suspended": True}
+
+
+@router.post("/merchants/{merchant_id}/unsuspend-messaging", tags=["Admin — Merchant Approval"])
+async def unsuspend_merchant_messaging(
+    merchant_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(_require_admin),
+):
+    """Admin-only. Restores outbound WhatsApp messaging for this merchant."""
+    from app.models.merchant import Merchant
+
+    res = await db.execute(select(Merchant).where(Merchant.id == merchant_id))
+    merchant = res.scalar_one_or_none()
+    if not merchant:
+        raise HTTPException(status_code=404, detail="Merchant not found")
+
+    merchant.messaging_suspended_at = None
+    await db.commit()
+    return {"ok": True, "merchant_id": merchant_id, "messaging_suspended": False}

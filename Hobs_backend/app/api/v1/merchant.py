@@ -1086,6 +1086,35 @@ async def apply_wizard_step_three(
     try:
         reg = app.registration_status  # "registered" | "unregistered"
 
+        # ── Skip path: applicant chooses to finish the wizard without
+        # submitting CAC/BVN/NIN right now. Fully optional — this starts
+        # the 7-day grace period (see verification_grace_job.py) rather
+        # than blocking anything.
+        if payload.skip_verification:
+            app.verification_method       = None
+            app.verification_status       = "not_started"
+            app.verification_name_on_file = None
+            app.transaction_limit         = get_transaction_limit(reg, "not_started")
+            app.verification_skipped_at   = datetime.now(timezone.utc)
+            app.current_step              = 4
+            app.last_activity_at          = datetime.now(timezone.utc)
+            await db.commit()
+
+            return {
+                "current_step": 4,
+                "verification_status": "not_started",
+                "transaction_limit": app.transaction_limit,
+                "message": (
+                    "No problem — you can add your CAC or NIN later. Your account "
+                    "will work exactly as normal while you get to it. Just know "
+                    "that if it's still missing after 7 days, WhatsApp messaging "
+                    "gets paused until you verify — nothing else changes, and "
+                    "your account is never deactivated. We'll send a few "
+                    "friendly reminders before then so it won't catch you "
+                    "off guard."
+                ),
+            }
+
         if reg == "registered":
             if not payload.cac_number:
                 raise HTTPException(
@@ -1119,6 +1148,7 @@ async def apply_wizard_step_three(
         app.verification_status        = result.status
         app.verification_name_on_file  = result.name_on_file
         app.transaction_limit          = get_transaction_limit(reg, result.status)
+        app.verification_skipped_at    = None  # they came back and did it — stop the grace-period clock
         app.current_step               = 4
         app.last_activity_at           = datetime.now(timezone.utc)
         await db.commit()
@@ -1160,17 +1190,22 @@ async def apply_wizard_step_four(
     app = await _load_draft(resume_token, db)
     application_id = app.id
 
-    # Guard: steps 2 and 3 must have been completed.
+    # Guard: step 2 must have been completed. Step 3 (verification) is
+    # optional — an applicant can reach here having explicitly skipped it,
+    # or having never touched it at all. Either way we don't block
+    # submission; we just make sure the grace-period clock has started.
     if not app.business_name or not app.registration_status:
         raise HTTPException(
             status_code=422,
             detail="Business details (step 2) must be completed before submitting.",
         )
-    if not app.verification_method:
-        raise HTTPException(
-            status_code=422,
-            detail="Identity verification (step 3) must be completed before submitting.",
+    if not app.verification_method and not app.verification_skipped_at:
+        from app.services.verification_service import get_transaction_limit
+        app.verification_status     = app.verification_status or "not_started"
+        app.transaction_limit       = app.transaction_limit or get_transaction_limit(
+            app.registration_status or "unregistered", "not_started",
         )
+        app.verification_skipped_at = datetime.now(timezone.utc)
 
     client_ip = get_client_ip(request)
 

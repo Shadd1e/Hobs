@@ -71,6 +71,30 @@ class MerchantApplication(Base):
     reminder_count          = Column(Integer, nullable=False, default=0)
     last_reminder_sent_at  = Column(DateTime(timezone=True), nullable=True)
 
+    # ── Verification grace period (7-day nudge sequence) ────────────────────
+    # Separate from reminder_count/last_reminder_sent_at above, which track
+    # the *idle draft* reminder job (app/api/v1/workers/reminder_job.py).
+    # These track a different sequence: once an applicant finishes the
+    # wizard WITHOUT submitting CAC/BVN/NIN (verification_method is null),
+    # verification_skipped_at is stamped and the clock starts. See
+    # app/api/v1/workers/verification_grace_job.py.
+    verification_skipped_at = Column(
+        DateTime(timezone=True), nullable=True,
+        comment="Set when the applicant finalises the wizard without submitting "
+                "verification. Anchor for the day 2/4/6/7 reminder sequence.",
+    )
+    verification_reminder_count = Column(
+        Integer, nullable=False, default=0,
+        comment="0-5. Advances through the day2/day4/day6/day7am/day7pm sequence.",
+    )
+    last_verification_reminder_sent_at = Column(DateTime(timezone=True), nullable=True)
+    verification_admin_alert_sent_at = Column(
+        DateTime(timezone=True), nullable=True,
+        comment="Set once the day-7 Slack + admin-dashboard nudge has fired for this "
+                "application, so it doesn't get re-sent every time the job runs.",
+    )
+
+
     # ── Applicant info ─────────────────────────────────────────────────────
     full_name       = Column(String(255), nullable=False)
     email            = Column(String(255), nullable=False, index=True)

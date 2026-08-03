@@ -2,22 +2,22 @@
 
 /** GET /hotel/bookings/{booking_code}?client_id=... */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ApiError, getBooking, type BookingAdmin } from "@/lib/api";
+import { ApiError, getBooking, type RoomBookingAdminRead } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 export default function BookingDetailPage() {
   const { session } = useAuth();
   const params = useParams<{ clientId: string; bookingCode: string }>();
 
-  const [booking, setBooking] = useState<BookingAdmin | null>(null);
+  const [booking, setBooking] = useState<RoomBookingAdminRead | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session) return;
-    getBooking(session.access_token, params.bookingCode, params.clientId)
+    getBooking(session.access_token, params.clientId, params.bookingCode)
       .then(setBooking)
       .catch((err) => setError(err instanceof ApiError ? err.message : "Couldn't load booking."));
   }, [session, params.bookingCode, params.clientId]);
@@ -57,7 +57,7 @@ export default function BookingDetailPage() {
   );
 }
 
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
+function Row({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
       <span style={{ color: "var(--muted)" }}>{label}</span>

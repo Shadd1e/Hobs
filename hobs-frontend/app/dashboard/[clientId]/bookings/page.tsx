@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ApiError, listBookings, type BookingAdmin, type BookingStatus } from "@/lib/api";
+import { ApiError, listBookings, type RoomBookingAdminRead, type BookingStatus } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 const STATUSES: BookingStatus[] = [
@@ -23,7 +23,7 @@ export default function BookingsPage() {
   const params = useParams<{ clientId: string }>();
   const clientId = params.clientId;
 
-  const [bookings, setBookings] = useState<BookingAdmin[] | null>(null);
+  const [bookings, setBookings] = useState<RoomBookingAdminRead[] | null>(null);
   const [status, setStatus] = useState<BookingStatus | "">("");
   const [error, setError] = useState<string | null>(null);
 

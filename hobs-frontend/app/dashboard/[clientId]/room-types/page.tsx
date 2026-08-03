@@ -7,7 +7,14 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useParams } from "next/navigation";
-import { ApiError, createRoomType, deleteRoomType, listRoomTypes, updateRoomType, type RoomType } from "@/lib/api";
+import {
+  ApiError,
+  createRoomType,
+  deleteRoomType,
+  listRoomTypes,
+  updateRoomType,
+  type RoomTypeRead,
+} from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 export default function RoomTypesPage() {
@@ -15,7 +22,7 @@ export default function RoomTypesPage() {
   const params = useParams<{ clientId: string }>();
   const clientId = params.clientId;
 
-  const [roomTypes, setRoomTypes] = useState<RoomType[] | null>(null);
+  const [roomTypes, setRoomTypes] = useState<RoomTypeRead[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -33,7 +40,7 @@ export default function RoomTypesPage() {
     if (!session) return;
     if (!confirm("Delete this room type? This fails if any rooms still use it.")) return;
     try {
-      await deleteRoomType(session.access_token, id, clientId);
+      await deleteRoomType(session.access_token, clientId, id);
       load();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Couldn't delete.");
@@ -137,12 +144,10 @@ function CreateForm({
     setError(null);
     setBusy(true);
     try {
-      await createRoomType(token, {
+      await createRoomType(token, clientId, merchantId, {
         name,
         price: Number(price),
         description: description || null,
-        merchant_id: merchantId,
-        client_id: clientId,
       });
       setName("");
       setPrice("");
@@ -184,7 +189,7 @@ function EditForm({
   onDone,
   onCancel,
 }: {
-  roomType: RoomType;
+  roomType: RoomTypeRead;
   clientId: string;
   token: string;
   onDone: () => void;
@@ -201,7 +206,7 @@ function EditForm({
     setError(null);
     setBusy(true);
     try {
-      await updateRoomType(token, roomType.id, clientId, {
+      await updateRoomType(token, clientId, roomType.id, {
         name,
         price: Number(price),
         description: description || null,

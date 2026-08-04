@@ -23,7 +23,8 @@ from app.services.inventory_service import InventoryService
 from app.services.cart_service import CartService
 from app.core.helpers import number_to_words
 from app.models.utils import generate_uuid
-from app.services.paystack_subaccount_service import PaystackSubaccountService
+from app.services.paystack_subaccount_service import PaystackSubaccountService  # RETIRED — kept for rollback, see docs/WIRING_NOTES.md
+from app.services.flutterwave_subaccount_service import FlutterwaveSubaccountService
 
 logger = logging.getLogger(__name__)
 
@@ -221,7 +222,7 @@ class CheckoutService:
 
             reference = f"order_{order.id}"
 
-            await self.payment_service.create_paystack_payment(
+            await self.payment_service.create_flutterwave_payment(
                 order_id=str(order.id),
                 merchant_id=cart.merchant_id,
                 client_id=cart.client_id,
@@ -230,8 +231,8 @@ class CheckoutService:
                 customer_phone=data.user_id,
             )
 
-            subaccount_service = PaystackSubaccountService(self.db)
-            subaccount_code = await subaccount_service.get_subaccount_code(
+            subaccount_service = FlutterwaveSubaccountService(self.db)
+            subaccount_id = await subaccount_service.get_subaccount_id(
                 client_id=cart.client_id,
                 merchant_id=cart.merchant_id,
             )
@@ -244,16 +245,16 @@ class CheckoutService:
                 )
                 store_whatsapp = client_wa_result.scalar_one_or_none()
 
-                payment_link = await self.create_paystack_payment_link(
+                payment_link = await self.create_flutterwave_payment_link(
                     reference=reference,
                     amount_naira=total_float,
                     phone=data.user_id,
-                    subaccount_code=subaccount_code,
+                    subaccount_id=subaccount_id,
                     store_whatsapp=store_whatsapp,
                 )
             except Exception as pay_err:
                 logger.error(
-                    "Paystack link creation failed for order %s: %s",
+                    "Flutterwave link creation failed for order %s: %s",
                     order.id, pay_err,
                 )
                 for item in cart.items:
@@ -409,7 +410,93 @@ class CheckoutService:
         return await self.checkout(checkout_data)
 
     # ==================================================
-    # PAYSTACK EXTERNAL CALL
+    # FLUTTERWAVE EXTERNAL CALL (live path — see docs/WIRING_NOTES.md)
+    # ==================================================
+
+    async def create_flutterwave_payment_link(
+        self,
+        *,
+        reference: str,
+        amount_naira: float,
+        phone: str,
+        subaccount_id: Optional[str] = None,
+        store_whatsapp: Optional[str] = None,
+    ) -> str:
+        # Reads PAYSTACK_SECRET_KEY on purpose — holds the Flutterwave secret
+        # key in this deployment. See docs/WIRING_NOTES.md.
+        secret = os.getenv("PAYSTACK_SECRET_KEY")
+        if not secret:
+            raise ValueError(
+                "PAYSTACK_SECRET_KEY not configured (holds the Flutterwave "
+                "secret key — see docs/WIRING_NOTES.md)"
+            )
+
+        redirect_url = os.getenv("PAYSTACK_REDIRECT_URL", "")
+        if redirect_url and reference:
+            sep = "&" if "?" in redirect_url else "?"
+            redirect_url = f"{redirect_url}{sep}ref={reference}"
+            # Pass the store's WhatsApp number so the payment-success page can
+            # deep-link the customer back to the right conversation.
+            if store_whatsapp:
+                redirect_url = f"{redirect_url}&wa={store_whatsapp}"
+
+        email = f"{(phone or reference).replace('+', '')}@hobs.app"
+
+        payload = {
+            "tx_ref": reference,       # looked up by external_reference in the webhook
+            "amount": amount_naira,    # Flutterwave takes naira directly, no kobo conversion
+            "currency": "NGN",
+            "redirect_url": redirect_url,
+            "customer": {
+                "email": email,
+                "phonenumber": phone or None,
+                "name": "Customer",
+            },
+            "customizations": {
+                "title": "Order payment",
+            },
+        }
+
+        if subaccount_id:
+            # Flutterwave applies the split_value set at subaccount-creation
+            # time — no per-transaction percentage needed here.
+            payload["subaccounts"] = [{"id": subaccount_id}]
+            logger.info(
+                "Payment routed to Flutterwave subaccount %s (order: ₦%s)",
+                subaccount_id, amount_naira,
+            )
+        else:
+            logger.warning(
+                "No Flutterwave subaccount for client — payment goes to platform account. "
+                "Register one via POST /api/v1/subaccounts/{client_id}"
+            )
+
+        headers = {
+            "Authorization": f"Bearer {secret}",
+            "Content-Type": "application/json",
+        }
+
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.post(
+                "https://api.flutterwave.com/v3/payments",
+                json=payload,
+                headers=headers,
+            )
+
+        if response.status_code not in (200, 201):
+            logger.error("Flutterwave init error %s: %s", response.status_code, response.text)
+            raise ValueError("Failed to initialize Flutterwave payment")
+
+        data = response.json()
+        link = data.get("data", {}).get("link")
+        if not link:
+            raise ValueError("Flutterwave did not return a payment link")
+        return link
+
+    # ==================================================
+    # PAYSTACK EXTERNAL CALL — RETIRED / DORMANT
+    # Nothing calls this anymore (see create_flutterwave_payment_link above).
+    # Left in place for rollback per product decision — see docs/WIRING_NOTES.md.
     # ==================================================
 
     async def create_paystack_payment_link(

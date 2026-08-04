@@ -199,6 +199,26 @@ class BookingOrchestrator:
             booking = await self.ctx.booking_service.create_booking(booking_data)
 
             redirect_url = os.getenv("FLUTTERWAVE_REDIRECT_URL", "")
+            if redirect_url:
+                sep = "&" if "?" in redirect_url else "?"
+                redirect_url = f"{redirect_url}{sep}ref={booking.booking_code}"
+                # Pass the hotel's WhatsApp number so the payment-success
+                # page can deep-link the guest back to this conversation
+                # (mirrors create_flutterwave_payment_link in checkout_service.py).
+                try:
+                    from sqlalchemy import select
+                    from app.models.client_model import Client
+                    wa_result = await self.db.execute(
+                        select(Client.whatsapp_number).where(Client.id == self.client_id)
+                    )
+                    store_whatsapp = wa_result.scalar_one_or_none()
+                    if store_whatsapp:
+                        redirect_url = f"{redirect_url}&wa={store_whatsapp}"
+                except Exception:
+                    logger.warning(
+                        "Could not resolve hotel WhatsApp number for redirect_url", exc_info=True
+                    )
+
             payment_link = await self.ctx.booking_service.generate_payment_link_for_booking(
                 booking, redirect_url
             )

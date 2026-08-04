@@ -17,6 +17,78 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 # --------------------------------------------------
+# SENTRY (right after logging, before anything else runs, so startup
+# crashes and early import errors get captured too)
+# --------------------------------------------------
+_SENTRY_DSN = os.getenv("SENTRY_DSN", "")
+_ENVIRONMENT = os.getenv("ENVIRONMENT", "production").lower()
+
+if _SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.starlette import StarletteIntegration
+    from sentry_sdk.integrations.logging import LoggingIntegration
+
+    # This codebase logs a LOT of handled failures via logger.error() inside
+    # except blocks (webhook edge cases, notification sends, etc.) without
+    # re-raising — those currently vanish unless something also happens to
+    # fire a Slack alert right next to them. event_level=ERROR turns every
+    # logger.error() call into a Sentry event too, not just unhandled
+    # exceptions, so those stop being invisible.
+    _logging_integration = LoggingIntegration(
+        level=logging.INFO,    # breadcrumbs: INFO and above
+        event_level=logging.ERROR,  # events: ERROR and above
+    )
+
+    def _scrub_sensitive(event, hint):
+        """
+        Defense in depth on top of send_default_pii=False (the default).
+        This app encrypts NIN/BVN/CAC at rest (app/core/crypto.py) and
+        handles a single shared ADMIN_SECRET — make sure none of that, or
+        common auth headers, ever leaves in an event payload even if it
+        ends up in a log message, request body, or local variable capture.
+        """
+        _SENSITIVE_KEYS = {
+            "nin", "bvn", "cac_number", "cac", "password", "admin_secret",
+            "authorization", "x-admin-token", "x-cron-secret", "token",
+            "access_token", "refresh_token", "secret",
+        }
+
+        def _redact(obj):
+            if isinstance(obj, dict):
+                return {
+                    k: ("[Filtered]" if k.lower() in _SENSITIVE_KEYS else _redact(v))
+                    for k, v in obj.items()
+                }
+            if isinstance(obj, list):
+                return [_redact(v) for v in obj]
+            return obj
+
+        for key in ("request", "extra", "contexts"):
+            if key in event:
+                event[key] = _redact(event[key])
+        return event
+
+    sentry_sdk.init(
+        dsn=_SENTRY_DSN,
+        environment=_ENVIRONMENT,
+        release=os.getenv("RAILWAY_GIT_COMMIT_SHA", None),  # Railway sets this automatically
+        integrations=[FastApiIntegration(), StarletteIntegration(), _logging_integration],
+        # Error tracking, not perf tracing — keep this at 0 unless you
+        # specifically want transaction/latency data too (costs quota).
+        traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0")),
+        send_default_pii=False,
+        before_send=_scrub_sensitive,
+    )
+    logger.info("Sentry initialized (environment=%s)", _ENVIRONMENT)
+elif _ENVIRONMENT != "local":
+    logger.warning(
+        "SENTRY_DSN not set — unhandled exceptions and logged errors will "
+        "only reach Slack (see global_exception_handler) and stdout logs, "
+        "not Sentry. Set SENTRY_DSN to enable error monitoring."
+    )
+
+# --------------------------------------------------
 # Lifespan
 # --------------------------------------------------
 @asynccontextmanager
@@ -196,6 +268,14 @@ async def global_exception_handler(request: Request, exc: Exception):
         "Unhandled exception: %s %s — %s",
         request.method, request.url.path, exc, exc_info=True,
     )
+    if _SENTRY_DSN:
+        # FastApiIntegration/StarletteIntegration normally auto-capture
+        # unhandled exceptions, but registering our own catch-all handler
+        # here is exactly the scenario worth being explicit about rather
+        # than trusting auto-instrumentation silently — same reasoning as
+        # firing the Slack alert explicitly right below.
+        import sentry_sdk
+        sentry_sdk.capture_exception(exc)
     try:
         from app.infrastructure.alerting.slack import alert
         asyncio.create_task(alert(
@@ -239,8 +319,9 @@ async def add_security_headers(request: Request, call_next):
 
 # ── Core bot & payment infrastructure ─────────────────────────────────────────
 from app.api.v1.webhook import router as webhooks_router
-from app.api.v1.paystack import router as paystack_router
+from app.api.v1.paystack import router as paystack_router  # RETIRED — kept mounted for rollback, see docs/WIRING_NOTES.md
 from app.api.v1.flutterwave_booking import router as flutterwave_booking_router
+from app.api.v1.flutterwave_orders import router as flutterwave_orders_router
 from app.api.v1.hotel_webhook import router as hotel_webhook_router
 from app.api.v1.hotel_dashboard import router as hotel_dashboard_router
 from app.api.v1.hotel_staff_auth import router as hotel_staff_auth_router
@@ -312,8 +393,9 @@ API_V1_PREFIX = "/api/v1"
 
 # Webhook & payment (order matters — webhooks before everything else)
 app.include_router(webhooks_router,  prefix=API_V1_PREFIX, tags=["Webhooks"])
-app.include_router(paystack_router,  prefix=API_V1_PREFIX, tags=["Paystack"])
+app.include_router(paystack_router,  prefix=API_V1_PREFIX, tags=["Paystack"])  # RETIRED — see docs/WIRING_NOTES.md
 app.include_router(flutterwave_booking_router, prefix=API_V1_PREFIX, tags=["Flutterwave Bookings"])
+app.include_router(flutterwave_orders_router, prefix=API_V1_PREFIX, tags=["Flutterwave Orders"])
 app.include_router(hotel_webhook_router, prefix=API_V1_PREFIX, tags=["Hotel WhatsApp Webhook"])
 app.include_router(hotel_dashboard_router, prefix=API_V1_PREFIX, tags=["Hotel Dashboard"])
 app.include_router(hotel_staff_auth_router, prefix=API_V1_PREFIX, tags=["Hotel Staff Auth"])

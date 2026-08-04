@@ -1337,11 +1337,13 @@ async def update_store_commission(
     _: None = Depends(_require_admin),
 ):
     """
-    Admin-only. Sets a custom commission rate for one store's Paystack
-    subaccount. Body: {"percentage_charge": 0.8}. Deliberately not
+    Admin-only. Sets a custom commission rate for one store's Flutterwave
+    subaccount. Body: {"percentage_charge": 4.0}. Deliberately not
     merchant-facing — a store owner setting their own platform fee would be
     a conflict of interest. If never called, a store keeps the platform
-    default (PaystackSubaccountService.DEFAULT_PERCENTAGE_CHARGE, 0.8%).
+    default (FlutterwaveSubaccountService.DEFAULT_PERCENTAGE_CHARGE, 4%) —
+    shared with hotel bookings, since a store has one Flutterwave
+    subaccount covering everything it sells through Flutterwave.
     Applies to future charges only.
     """
     try:
@@ -1356,12 +1358,12 @@ async def update_store_commission(
     except (TypeError, ValueError):
         raise HTTPException(status_code=400, detail="percentage_charge must be numeric")
 
-    from app.services.paystack_subaccount_service import PaystackSubaccountService
+    from app.services.flutterwave_subaccount_service import FlutterwaveSubaccountService
 
-    service = PaystackSubaccountService(db)
+    service = FlutterwaveSubaccountService(db)
     try:
-        subaccount = await service.update_percentage_charge(
-            client_id=client_id, merchant_id=merchant_id, percentage_charge=percentage_charge,
+        subaccount = await service.update_split_percentage(
+            client_id=client_id, merchant_id=merchant_id, split_percentage=percentage_charge,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

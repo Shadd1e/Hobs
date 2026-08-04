@@ -142,8 +142,40 @@ class PaymentService:
         return payment
 
     # =====================================================
-    # CASH PAYMENT CREATION
+    # FLUTTERWAVE PAYMENT CREATION
     # =====================================================
+    # Live path for orders as of the Flutterwave cutover — see
+    # docs/WIRING_NOTES.md. create_paystack_payment above is kept for
+    # rollback but nothing calls it anymore.
+
+    async def create_flutterwave_payment(
+        self,
+        *,
+        order_id: str,
+        merchant_id: str,
+        client_id: str,
+        amount: Decimal,
+        reference: str,
+        customer_phone: Optional[str] = None,
+    ) -> Payment:
+        payment = await self.create(PaymentCreate(
+            order_id=order_id,
+            merchant_id=merchant_id,
+            client_id=client_id,
+            amount=float(amount),
+            method="flutterwave",
+            status=PaymentStatus.PENDING,
+            metadata={
+                "provider": "flutterwave",
+                "provider_reference": reference,
+                "reference": reference,
+                "customer_phone": customer_phone,
+                "initiated_at": datetime.now(timezone.utc).isoformat(),
+            },
+        ))
+        payment.external_reference = reference
+        await self.db.flush()
+        return payment
 
     async def create_cash_payment(
         self,
@@ -261,6 +293,45 @@ class PaymentService:
                 "webhook_received_at": datetime.now(timezone.utc).isoformat(),
                 "paystack_payload": payload,
                 "provider": "paystack",
+            },
+        )
+
+    # =====================================================
+    # FLUTTERWAVE WEBHOOK (IDEMPOTENT)
+    # =====================================================
+    # Live path for orders as of the Flutterwave cutover — see
+    # docs/WIRING_NOTES.md. Same shape as handle_paystack_webhook above,
+    # kept separate rather than parameterized so the (retired) Paystack
+    # path stays untouched and easy to roll back to independently.
+
+    async def handle_flutterwave_webhook(
+        self,
+        *,
+        tx_ref: str,
+        payload: Dict[str, Any],
+    ) -> Payment:
+        """Look up payment by external_reference, mark SUCCEEDED."""
+        result = await self.db.execute(
+            select(Payment).where(
+                Payment.external_reference == tx_ref
+            ).with_for_update()
+        )
+        payment = result.scalar_one_or_none()
+        if not payment:
+            raise ValueError(f"Payment not found for reference: {tx_ref}")
+        if payment.status == PaymentStatus.SUCCEEDED:
+            return payment  # idempotent
+        return await self.update_status(
+            payment_id=payment.id,
+            merchant_id=payment.merchant_id,
+            client_id=payment.client_id,
+            new_status=PaymentStatus.SUCCEEDED,
+            provider_reference=tx_ref,
+            skip_succeeded_check=True,
+            metadata_update={
+                "webhook_received_at": datetime.now(timezone.utc).isoformat(),
+                "flutterwave_payload": payload,
+                "provider": "flutterwave",
             },
         )
 

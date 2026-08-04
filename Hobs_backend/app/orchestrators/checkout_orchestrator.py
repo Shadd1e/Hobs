@@ -447,7 +447,7 @@ class CheckoutOrchestrator:
             from sqlalchemy import select as _sa_select
             from app.models.payment import Payment, PaymentStatus
             from app.models.order import Order
-            from app.services.paystack_subaccount_service import PaystackSubaccountService
+            from app.services.flutterwave_subaccount_service import FlutterwaveSubaccountService
 
             # Fetch the order
             _order_res = await self.ctx.db.execute(
@@ -475,18 +475,18 @@ class CheckoutOrchestrator:
                     f"Send *new* to cancel and start fresh."
                 )
 
-            # Regenerate the Paystack link using the existing reference
-            subaccount_service = PaystackSubaccountService(self.ctx.db)
-            subaccount_code = await subaccount_service.get_subaccount_code(
+            # Regenerate the Flutterwave link using the existing reference
+            subaccount_service = FlutterwaveSubaccountService(self.ctx.db)
+            subaccount_id = await subaccount_service.get_subaccount_id(
                 client_id=self.client_id,
                 merchant_id=self.merchant_id,
             )
 
-            payment_link = await self.checkout_service.create_paystack_payment_link(
+            payment_link = await self.checkout_service.create_flutterwave_payment_link(
                 reference=payment.external_reference,
                 amount_naira=float(order.total_amount),
                 phone=self.user_id,
-                subaccount_code=subaccount_code,
+                subaccount_id=subaccount_id,
             )
 
             await self.memory.set_mode("idle")

@@ -13,6 +13,15 @@ PAYSTACK_BASE = "https://api.paystack.co"
 
 
 class PaystackSubaccountService:
+    """
+    RETIRED / DORMANT as of the Flutterwave order-payment cutover — see
+    docs/WIRING_NOTES.md. Nothing in checkout_service.py or
+    checkout_orchestrator.py calls this anymore; FlutterwaveSubaccountService
+    is the live path for both orders and bookings now. Left in place
+    (not deleted) per product decision, in case of rollback. Do not wire
+    this back into checkout without also reverting the Flutterwave webhook
+    changes — the two need to move together.
+    """
     # Platform's default commission when a store doesn't get a custom rate.
     # Was hardcoded to 1.0 everywhere — changed to 0.8 per product decision,
     # and now actually overridable per store (see register()'s
@@ -110,6 +119,7 @@ class PaystackSubaccountService:
             split_value=str(percentage_charge),
             split_type="percentage",
             active=True,
+            provider="paystack",
         )
         self.db.add(subaccount)
         await self.db.flush()
@@ -154,6 +164,7 @@ class PaystackSubaccountService:
                 FlutterwaveSubaccount.client_id == client_id,
                 FlutterwaveSubaccount.merchant_id == merchant_id,
                 FlutterwaveSubaccount.active.is_(True),
+                FlutterwaveSubaccount.provider == "paystack",
             )
         )
         return result.scalar_one_or_none()
@@ -169,6 +180,7 @@ class PaystackSubaccountService:
             select(FlutterwaveSubaccount).where(
                 FlutterwaveSubaccount.client_id == client_id,
                 FlutterwaveSubaccount.merchant_id == merchant_id,
+                FlutterwaveSubaccount.provider == "paystack",
             )
         )
         subaccount = result.scalar_one_or_none()

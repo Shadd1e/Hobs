@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.schemas.flutterwave_subaccount import SubaccountRegisterRequest, SubaccountRead
-from app.services.paystack_subaccount_service import PaystackSubaccountService
+from app.services.flutterwave_subaccount_service import FlutterwaveSubaccountService
 from app.db.deps import get_db
 
 logger = logging.getLogger(__name__)
@@ -22,10 +22,10 @@ def _require_merchant(request: Request) -> str:
 
 @router.get("/banks")
 async def list_banks(request: Request, db: AsyncSession = Depends(get_db)):
-    """Returns all Nigerian banks supported by Paystack."""
+    """Returns all Nigerian banks supported by Flutterwave."""
     _require_merchant(request)
     try:
-        service = PaystackSubaccountService(db)
+        service = FlutterwaveSubaccountService(db)
         banks = await service.list_banks()
         return {"banks": banks}
     except ValueError as e:
@@ -38,7 +38,7 @@ async def verify_bank_account(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
-    """Verify a bank account number against Paystack."""
+    """Verify a bank account number against Flutterwave."""
     merchant_id = _require_merchant(request)
 
     from app.core.redis_client import check_rate_limit
@@ -54,7 +54,7 @@ async def verify_bank_account(
     if not account_number or not bank_code:
         raise HTTPException(status_code=400, detail="account_number and account_bank required")
     try:
-        service = PaystackSubaccountService(db)
+        service = FlutterwaveSubaccountService(db)
         result = await service.verify_account(account_number, bank_code)
         return result
     except ValueError as e:
@@ -70,15 +70,15 @@ async def register_subaccount(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Register a Paystack subaccount for a store (client).
+    Register a Flutterwave subaccount for a store (client).
 
-    Calls Paystack's API with the store's bank details and saves the returned
+    Calls Flutterwave's API with the store's bank details and saves the returned
     subaccount_code. Once registered, all card payments from that store will
     route directly to this bank account.
     """
     merchant_id = _require_merchant(request)
 
-    service = PaystackSubaccountService(db)
+    service = FlutterwaveSubaccountService(db)
 
     existing = await service.get_for_client(
         client_id=client_id,
@@ -122,7 +122,7 @@ async def get_subaccount(
     """Get the registered subaccount for a store."""
     merchant_id = _require_merchant(request)
 
-    service = PaystackSubaccountService(db)
+    service = FlutterwaveSubaccountService(db)
     subaccount = await service.get_for_client(
         client_id=client_id,
         merchant_id=merchant_id,
@@ -141,7 +141,7 @@ async def deactivate_subaccount(
     """Deactivate a store's subaccount. Payments will fall back to platform account."""
     merchant_id = _require_merchant(request)
 
-    service = PaystackSubaccountService(db)
+    service = FlutterwaveSubaccountService(db)
     success = await service.deactivate(
         client_id=client_id,
         merchant_id=merchant_id,

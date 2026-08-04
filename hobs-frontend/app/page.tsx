@@ -56,6 +56,13 @@ function IconDashboard() {
 export default function HomePage() {
   return (
     <div className="landing">
+      <div className="landing-aurora" aria-hidden="true">
+        <span className="aurora-blob aurora-blob-a" />
+        <span className="aurora-blob aurora-blob-b" />
+        <span className="aurora-blob aurora-blob-c" />
+        <span className="aurora-blob aurora-blob-d" />
+      </div>
+
       <header className="landing-header">
         <div className="landing-shell landing-header-inner">
           <Link href="/" className="landing-brand" aria-label="HoBS — home">
@@ -79,6 +86,7 @@ export default function HomePage() {
         {/* ── Hero ─────────────────────────────────────────────────────── */}
         <section className="landing-hero">
           <div className="landing-shell">
+          <div className="hero-grid">
             <div className="hero-copy">
               <span className="hero-kicker">
                 <IconSparkle />
@@ -175,6 +183,7 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+          </div>
         </section>
 
         {/* ── Urgency: sell the loss ──────────────────────────────────── */}
@@ -198,7 +207,10 @@ export default function HomePage() {
         {/* ── How it works ────────────────────────────────────────────── */}
         <section className="landing-how">
           <div className="landing-shell">
-            <h2 className="landing-h2">A guest messages. You do nothing else.</h2>
+            <div className="how-head">
+              <span className="how-eyebrow">The process</span>
+              <h2 className="landing-h2">A guest messages. You do nothing else.</h2>
+            </div>
             <div className="how-flow">
               <div className="how-node">
                 <div className="how-node-top">
@@ -238,12 +250,15 @@ export default function HomePage() {
 
         {/* ── Reframe ──────────────────────────────────────────────────── */}
         <section className="landing-quote">
-          <div className="landing-shell quote-inner">
+          <div className="landing-shell">
+          <div className="quote-inner">
+            <span className="quote-mark" aria-hidden="true">&ldquo;</span>
             <p className="quote-text">
               Hotels rarely lose bookings because they&rsquo;re full. They lose them because they
               replied <span className="gold-text">too late.</span>
             </p>
             <p className="quote-sub">HoBS replies in seconds, every time — day, night, and everything after.</p>
+          </div>
           </div>
         </section>
 

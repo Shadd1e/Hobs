@@ -1122,12 +1122,24 @@ async def approve_application(
         application.status      = "needs_attention"
         application.last_error  = result["detail"]
         application.reviewed_at = datetime.now(timezone.utc)
+        from app.services.admin_audit_service import log_admin_action
+        await log_admin_action(
+            db, request=request, action="application.approve_failed",
+            target_type="merchant_application", target_id=application_id,
+            detail=result["detail"],
+        )
         await db.commit()
         raise HTTPException(status_code=400, detail=result["detail"])
 
     application.status      = "approved"
     application.merchant_id = result["merchant_id"]
     application.reviewed_at = datetime.now(timezone.utc)
+    from app.services.admin_audit_service import log_admin_action
+    await log_admin_action(
+        db, request=request, action="application.approved",
+        target_type="merchant_application", target_id=application_id,
+        detail=f"created merchant_id={result['merchant_id']}",
+    )
     await db.commit()
 
     return result["response"]
@@ -1156,6 +1168,11 @@ async def reject_application(
 
     application.status      = "rejected"
     application.reviewed_at = datetime.now(timezone.utc)
+    from app.services.admin_audit_service import log_admin_action
+    await log_admin_action(
+        db, request=request, action="application.rejected",
+        target_type="merchant_application", target_id=application_id,
+    )
     await db.commit()
 
     try:
@@ -1185,6 +1202,184 @@ async def reject_application(
 # An admin decides from there whether to actually pause messaging on the
 # merchant, using the two endpoints below.
 # ─────────────────────────────────────────────────────────────────────────────
+
+@router.get("/applications/pending-verification-review", tags=["Admin — Merchant Approval"])
+async def list_pending_verification_reviews(request: Request, db: AsyncSession = Depends(get_db)):
+    """
+    Applications where the applicant DID submit CAC/BVN/NIN (unlike
+    verification-alerts above, which is about applicants who submitted
+    nothing at all) and it's sitting at verification_status =
+    'pending_manual_review', waiting on an admin to actually check it.
+    verify_cac/verify_bvn/verify_nin never auto-resolve this — every
+    submission needs a human decision via approve/reject below.
+    """
+    await _require_admin(request)
+    from datetime import datetime, timezone
+    from app.models.merchant_application import MerchantApplication
+
+    result = await db.execute(
+        select(MerchantApplication).where(
+            MerchantApplication.verification_status == "pending_manual_review",
+            MerchantApplication.verification_reviewed_at.is_(None),
+        ).order_by(MerchantApplication.created_at.asc())
+    )
+    apps = result.scalars().all()
+    return {
+        "count": len(apps),
+        "applications": [
+            {
+                "id":                  a.id,
+                "business_name":       a.business_name,
+                "full_name":           a.full_name,
+                "email":               a.email,
+                "verification_method": a.verification_method,
+                "submitted_at":        a.created_at.isoformat() if a.created_at else None,
+                "waiting_hours":       round(
+                    (datetime.now(timezone.utc) - a.created_at).total_seconds() / 3600, 1
+                ) if a.created_at else None,
+            }
+            for a in apps
+        ],
+    }
+
+
+@router.post("/applications/{application_id}/verification/approve", tags=["Admin — Merchant Approval"])
+async def approve_application_verification(
+    application_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(_require_admin),
+):
+    """Admin-only. Marks a submitted CAC/BVN/NIN as verified after manual review."""
+    from datetime import datetime, timezone
+    from app.models.merchant_application import MerchantApplication
+
+    res = await db.execute(
+        select(MerchantApplication).where(MerchantApplication.id == application_id)
+    )
+    application = res.scalar_one_or_none()
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    application.verification_status         = "verified"
+    application.verification_reviewed_at    = datetime.now(timezone.utc)
+    application.verification_review_outcome = "verified"
+    application.verification_skipped_at     = None  # clear grace-period clock — they're verified now
+
+    from app.services.admin_audit_service import log_admin_action
+    await log_admin_action(
+        db, request=request, action="verification.approved",
+        target_type="merchant_application", target_id=application_id,
+    )
+    await db.commit()
+    return {"ok": True, "id": application_id, "verification_status": "verified"}
+
+
+@router.post("/applications/{application_id}/verification/reject", tags=["Admin — Merchant Approval"])
+async def reject_application_verification(
+    application_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(_require_admin),
+):
+    """
+    Admin-only. Marks a submitted CAC/BVN/NIN as failed review (e.g. name
+    mismatch, invalid number). Reopens the grace-period clock from now, so
+    the applicant gets the reminder sequence again to resubmit — this is
+    exactly the "review doesn't pan out" case the applicant needs to hear
+    about, not silence.
+
+    Body (JSON, optional): {"reason": "..."}
+    """
+    from datetime import datetime, timezone
+    from app.models.merchant_application import MerchantApplication
+
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    reason = (body or {}).get("reason")
+
+    res = await db.execute(
+        select(MerchantApplication).where(MerchantApplication.id == application_id)
+    )
+    application = res.scalar_one_or_none()
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    application.verification_status         = "failed"
+    application.verification_reviewed_at    = datetime.now(timezone.utc)
+    application.verification_review_outcome = "rejected"
+    application.verification_method         = None
+    application.verification_skipped_at     = datetime.now(timezone.utc)  # restart the grace clock
+    application.verification_reminder_count = 0
+    application.verification_admin_alert_sent_at = None
+
+    from app.services.admin_audit_service import log_admin_action
+    await log_admin_action(
+        db, request=request, action="verification.rejected",
+        target_type="merchant_application", target_id=application_id,
+        detail=reason,
+    )
+    await db.commit()
+    return {"ok": True, "id": application_id, "verification_status": "failed"}
+
+
+@router.patch(
+    "/merchants/{merchant_id}/clients/{client_id}/commission",
+    tags=["Admin — Merchant Approval"],
+)
+async def update_store_commission(
+    merchant_id: str,
+    client_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(_require_admin),
+):
+    """
+    Admin-only. Sets a custom commission rate for one store's Paystack
+    subaccount. Body: {"percentage_charge": 0.8}. Deliberately not
+    merchant-facing — a store owner setting their own platform fee would be
+    a conflict of interest. If never called, a store keeps the platform
+    default (PaystackSubaccountService.DEFAULT_PERCENTAGE_CHARGE, 0.8%).
+    Applies to future charges only.
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    percentage_charge = (body or {}).get("percentage_charge")
+    if percentage_charge is None:
+        raise HTTPException(status_code=400, detail="percentage_charge is required")
+    try:
+        percentage_charge = float(percentage_charge)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="percentage_charge must be numeric")
+
+    from app.services.paystack_subaccount_service import PaystackSubaccountService
+
+    service = PaystackSubaccountService(db)
+    try:
+        subaccount = await service.update_percentage_charge(
+            client_id=client_id, merchant_id=merchant_id, percentage_charge=percentage_charge,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    from app.services.admin_audit_service import log_admin_action
+    await log_admin_action(
+        db, request=request, action="merchant.commission_updated",
+        target_type="client", target_id=client_id,
+        detail=f"percentage_charge -> {percentage_charge}",
+    )
+    await db.commit()
+    return {
+        "ok": True,
+        "client_id": client_id,
+        "subaccount_id": subaccount.subaccount_id,
+        "percentage_charge": percentage_charge,
+    }
+
 
 @router.get("/verification-alerts", tags=["Admin — Merchant Approval"])
 async def list_verification_alerts(request: Request, db: AsyncSession = Depends(get_db)):
@@ -1240,6 +1435,11 @@ async def suspend_merchant_messaging(
         raise HTTPException(status_code=404, detail="Merchant not found")
 
     merchant.messaging_suspended_at = datetime.now(timezone.utc)
+    from app.services.admin_audit_service import log_admin_action
+    await log_admin_action(
+        db, request=request, action="merchant.messaging_suspended",
+        target_type="merchant", target_id=merchant_id,
+    )
     await db.commit()
     return {"ok": True, "merchant_id": merchant_id, "messaging_suspended": True}
 
@@ -1260,5 +1460,10 @@ async def unsuspend_merchant_messaging(
         raise HTTPException(status_code=404, detail="Merchant not found")
 
     merchant.messaging_suspended_at = None
+    from app.services.admin_audit_service import log_admin_action
+    await log_admin_action(
+        db, request=request, action="merchant.messaging_unsuspended",
+        target_type="merchant", target_id=merchant_id,
+    )
     await db.commit()
     return {"ok": True, "merchant_id": merchant_id, "messaging_suspended": False}

@@ -94,6 +94,19 @@ class MerchantApplication(Base):
                 "application, so it doesn't get re-sent every time the job runs.",
     )
 
+    # Every submitted CAC/BVN/NIN goes to manual review — verification_status
+    # sits at "pending_manual_review" until an admin acts on it. These are
+    # separate from reviewed_at (application-level approve/reject) below.
+    verification_reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    verification_review_outcome = Column(
+        String(20), nullable=True, comment="verified | rejected",
+    )
+    last_admin_review_nudge_at = Column(
+        DateTime(timezone=True), nullable=True,
+        comment="De-dupe guard for the admin-facing pending-review nudge "
+                "(Slack + WhatsApp). See admin_review_nudge_job.py.",
+    )
+
 
     # ── Applicant info ─────────────────────────────────────────────────────
     full_name       = Column(String(255), nullable=False)

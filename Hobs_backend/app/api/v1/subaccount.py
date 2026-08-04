@@ -90,6 +90,11 @@ async def register_subaccount(
             detail=f"Subaccount already registered for this store: {existing.subaccount_id}"
         )
 
+    # percentage_charge is deliberately NOT taken from the merchant's own
+    # request here — a store owner shouldn't be able to set their own
+    # platform commission. Self-serve registration always uses the platform
+    # default; an admin can set a custom per-store rate afterward via
+    # POST /admin/whatsapp-setup/merchants/{merchant_id}/clients/{client_id}/commission.
     try:
         subaccount = await service.register(
             client_id=client_id,

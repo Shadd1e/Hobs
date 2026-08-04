@@ -92,6 +92,27 @@ async def run_weekly_staff_digest(x_cron_secret: str = Header(default="")):
     return result
 
 
+@router.post("/admin-review-nudges")
+async def run_admin_review_nudges(x_cron_secret: str = Header(default="")):
+    """
+    Nudges admins (Slack + WhatsApp, if HOBS_OPS_PHONE_NUMBER_ID /
+    HOBS_ADMIN_WHATSAPP_NUMBERS are configured) about verification
+    submissions that have sat unreviewed for 24h+. Repeats daily until
+    an admin approves or rejects via the /verification/approve|reject
+    endpoints. Point a scheduler at this hourly.
+
+        curl -X POST https://<your-api-domain>/internal/cron/admin-review-nudges \\
+             -H "X-Cron-Secret: $CRON_SECRET"
+    """
+    _check_cron_secret(x_cron_secret)
+
+    from app.api.v1.workers.admin_review_nudge_job import send_admin_review_nudges
+
+    async with AsyncSessionLocal() as db:
+        result = await send_admin_review_nudges(db)
+    return result
+
+
 @router.post("/daily-owner-digest")
 async def run_daily_owner_digest(x_cron_secret: str = Header(default="")):
     """Point a scheduler at this once a day (e.g. 8am local time)."""

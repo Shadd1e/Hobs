@@ -13,6 +13,15 @@ PAYSTACK_BASE = "https://api.paystack.co"
 
 
 class PaystackSubaccountService:
+    # Platform's default commission when a store doesn't get a custom rate.
+    # Was hardcoded to 1.0 everywhere — changed to 0.8 per product decision,
+    # and now actually overridable per store (see register()'s
+    # percentage_charge param). Paystack's subaccount API only supports a
+    # percentage split at the subaccount level (no flat-fee option), so
+    # split_type stays "percentage" — see the 400 raised in register()
+    # below if a caller asks for "flat".
+    DEFAULT_PERCENTAGE_CHARGE = 0.8
+
     def __init__(self, db: AsyncSession):
         self.db = db
 
@@ -61,12 +70,18 @@ class PaystackSubaccountService:
         account_number: str,
         account_name: str,
         business_name: str,
+        percentage_charge: Optional[float] = None,
     ) -> FlutterwaveSubaccount:
+        if percentage_charge is None:
+            percentage_charge = self.DEFAULT_PERCENTAGE_CHARGE
+        if not (0 <= percentage_charge <= 100):
+            raise ValueError("percentage_charge must be between 0 and 100")
+
         payload = {
             "business_name": business_name,
             "settlement_bank": account_bank,
             "account_number": account_number,
-            "percentage_charge": 1.0,
+            "percentage_charge": percentage_charge,
             "description": f"ShopprHQ store {client_id}",
             "primary_contact_email": f"{client_id}@shopprhq.app",
             "primary_contact_name": account_name,  # real bank account holder name for Paystack verification
@@ -81,7 +96,10 @@ class PaystackSubaccountService:
         if not data.get("status"):
             raise ValueError(f"Paystack subaccount error: {data.get('message', 'Unknown error')}")
         subaccount_code = data["data"]["subaccount_code"]
-        logger.info("Paystack subaccount created: %s for client %s", subaccount_code, client_id)
+        logger.info(
+            "Paystack subaccount created: %s for client %s (percentage_charge=%s)",
+            subaccount_code, client_id, percentage_charge,
+        )
         subaccount = FlutterwaveSubaccount(
             client_id=client_id,
             merchant_id=merchant_id,
@@ -89,12 +107,43 @@ class PaystackSubaccountService:
             account_bank=account_bank,
             account_number=account_number,
             business_name=business_name,
-            split_value="1.0",
+            split_value=str(percentage_charge),
             split_type="percentage",
             active=True,
         )
         self.db.add(subaccount)
         await self.db.flush()
+        return subaccount
+
+    async def update_percentage_charge(
+        self, *, client_id: str, merchant_id: str, percentage_charge: float,
+    ) -> FlutterwaveSubaccount:
+        """Change an existing store's commission rate. Calls Paystack's
+        subaccount update endpoint so it takes effect on the NEXT charge —
+        Paystack doesn't retroactively touch settled or in-flight transactions."""
+        if not (0 <= percentage_charge <= 100):
+            raise ValueError("percentage_charge must be between 0 and 100")
+
+        subaccount = await self.get_for_client(client_id=client_id, merchant_id=merchant_id)
+        if not subaccount:
+            raise ValueError("No subaccount registered for this store")
+
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            res = await client.put(
+                f"{PAYSTACK_BASE}/subaccount/{subaccount.subaccount_id}",
+                json={"percentage_charge": percentage_charge},
+                headers=self._headers(),
+            )
+        data = res.json()
+        if not data.get("status"):
+            raise ValueError(f"Paystack subaccount update error: {data.get('message', 'Unknown error')}")
+
+        subaccount.split_value = str(percentage_charge)
+        await self.db.flush()
+        logger.info(
+            "Paystack subaccount %s percentage_charge updated to %s for client %s",
+            subaccount.subaccount_id, percentage_charge, client_id,
+        )
         return subaccount
 
     async def get_for_client(

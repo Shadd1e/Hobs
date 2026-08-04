@@ -552,123 +552,184 @@ h1 {
   margin: 0 0 14px;
 }
 
-.hero {
-  padding: 56px 0 72px;
-}
+/* ── Mosaic hero (full-bleed, scrolling tile rows) ──────────────────────── */
 
-.hero-grid {
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 56px;
+.mosaic-hero {
+  position: relative;
+  min-height: min(88vh, 680px);
+  background: var(--ink);
+  overflow: hidden;
+  display: flex;
   align-items: center;
+  justify-content: center;
 }
 
-.hero-copy h1 {
-  font-size: 2.5rem;
-  line-height: 1.12;
-  margin-bottom: 18px;
+.mosaic-rows-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px 0;
 }
 
-.hero-copy .subtitle {
-  font-size: 1.05rem;
-  max-width: 46ch;
-  margin-bottom: 32px;
+.mosaic-row {
+  display: flex;
+  gap: 12px;
+  width: max-content;
+  animation-name: scrollX;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.mosaic-row.reverse {
+  animation-direction: reverse;
+}
+
+@keyframes scrollX {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mosaic-row {
+    animation: none;
+  }
+}
+
+.tile {
+  width: 148px;
+  height: 184px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tile.dark {
+  background: #141414;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.tile.light {
+  background: #f4f3f1;
+  color: #111111;
+}
+
+.tile svg {
+  width: 34px;
+  height: 34px;
+}
+
+.tile span {
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.hero-scrim {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.84) 62%, rgba(0, 0, 0, 0.93) 100%);
+}
+
+.edge-label {
+  position: absolute;
+  top: 50%;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+}
+
+.edge-label.left {
+  left: 18px;
+  transform: translateY(-50%) rotate(-90deg);
+  transform-origin: left center;
+}
+
+.edge-label.right {
+  right: 18px;
+  transform: translateY(-50%) rotate(90deg);
+  transform-origin: right center;
+}
+
+.hero-center {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  color: #ffffff;
+  padding: 0 60px;
+}
+
+.brand-word-lg {
+  display: block;
+  font-family: var(--font-display), Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.5rem;
+  margin-bottom: 16px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.hero-center .statement {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 2.6rem;
+  line-height: 1.16;
+  letter-spacing: 0.01em;
+  max-width: 16ch;
+  margin: 0 auto 34px;
 }
 
 .hero-cta-row {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 20px;
 }
 
 .hero-cta-row .btn {
   width: auto;
   padding: 13px 22px;
+  background: var(--paper);
+  color: var(--ink);
 }
 
 .hero-cta-row a.text-link {
   font-size: 0.9rem;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.7);
   text-decoration: underline;
 }
 
-/* ── Ticket / chat mockup (the signature element) ───────────────────────── */
+@media (max-width: 760px) {
+  .mosaic-hero {
+    min-height: 560px;
+  }
 
-.ticket {
-  position: relative;
-  background: var(--ink);
-  color: var(--paper);
-  border-radius: 18px;
-  padding: 22px 22px 20px;
-}
+  .hero-center {
+    padding: 0 28px;
+  }
 
-.ticket::before,
-.ticket::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  width: 22px;
-  height: 22px;
-  background: var(--paper);
-  border-radius: 50%;
-  transform: translateY(-50%);
-}
+  .hero-center .statement {
+    font-size: 1.9rem;
+  }
 
-.ticket::before {
-  left: -11px;
-}
-
-.ticket::after {
-  right: -11px;
-}
-
-.ticket-label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
-  padding-bottom: 14px;
-  margin-bottom: 14px;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.25);
-}
-
-.chat-thread {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.chat-bubble {
-  max-width: 84%;
-  padding: 9px 13px;
-  border-radius: 12px;
-  font-size: 0.88rem;
-  line-height: 1.4;
-}
-
-.chat-bubble.guest {
-  align-self: flex-start;
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--paper);
-  border-bottom-left-radius: 3px;
-}
-
-.chat-bubble.hobs {
-  align-self: flex-end;
-  background: var(--paper);
-  color: var(--ink);
-  font-weight: 500;
-  border-bottom-right-radius: 3px;
-}
-
-.ticket-foot {
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px dashed rgba(255, 255, 255, 0.25);
-  font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.5);
-  letter-spacing: 0.03em;
+  .edge-label {
+    display: none;
+  }
 }
 
 /* ── How it works (a real 3-step sequence, so numbers earn their place) ── */

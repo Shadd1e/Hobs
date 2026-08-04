@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
 
 :root {
   --ink: #0a0a0a;
@@ -562,30 +563,34 @@ h1 {
    ══════════════════════════════════════════════════════════════════════ */
 
 .landing {
-  --land-bg: #050505;
-  --land-surface: #0f1115;
-  --land-elevated: #171a20;
-  --land-text: #fafafa;
-  --land-muted: #8d94a1;
-  --land-border: rgba(255, 255, 255, 0.08);
-  --land-gold: #d4af37;
-  --land-gold-light: #e8d089;
-  --land-gold-dark: #a88321;
-  --land-gold-hover: #e5c158;
-  --land-emerald: #20d68f;
-  --land-font: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  /* PiggyVest-inspired palette: white canvas, deep navy ink, electric blue
+     as the primary accent (mapped onto the former --land-gold-* tokens so
+     every existing gradient/shadow/usage below repaints automatically),
+     and mint green as the secondary accent (former --land-emerald). */
+  --land-bg: #ffffff;
+  --land-surface: #f2f6fc;
+  --land-elevated: #ffffff;
+  --land-text: #0b1a3a;
+  --land-muted: #5c6b84;
+  --land-border: rgba(11, 26, 58, 0.08);
+  --land-gold: #0a5cff;
+  --land-gold-light: #4f8bff;
+  --land-gold-dark: #073ea6;
+  --land-gold-hover: #1a6bff;
+  --land-emerald: #17d68f;
+  --land-font: "Nunito", "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   font-family: var(--land-font);
   color: var(--land-text);
   background:
-    radial-gradient(ellipse 900px 700px at 10% 4%, rgba(212, 175, 55, 0.12), transparent 60%),
-    radial-gradient(ellipse 900px 760px at 92% 98%, rgba(32, 214, 143, 0.09), transparent 60%),
+    radial-gradient(ellipse 900px 700px at 10% 4%, rgba(10, 92, 255, 0.08), transparent 60%),
+    radial-gradient(ellipse 900px 760px at 92% 98%, rgba(23, 214, 143, 0.08), transparent 60%),
     var(--land-bg);
 }
 
 .landing ::selection {
   background: var(--land-gold);
-  color: #111;
+  color: #fff;
 }
 
 .landing-shell {
@@ -630,7 +635,7 @@ h1 {
   height: 30px;
   border-radius: 8px;
   background: linear-gradient(135deg, var(--land-gold-light), var(--land-gold) 60%, var(--land-gold-dark));
-  color: #14100a;
+  color: #ffffff;
   flex-shrink: 0;
 }
 
@@ -691,7 +696,7 @@ h1 {
 
 .hero-title {
   font-family: var(--land-font);
-  font-weight: 700;
+  font-weight: 800;
   font-size: clamp(2.5rem, 5.4vw, 4.5rem);
   line-height: 1.08;
   letter-spacing: -0.02em;
@@ -725,14 +730,14 @@ h1 {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 16px 30px;
-  border-radius: 10px;
+  padding: 16px 32px;
+  border-radius: 999px;
   background: var(--land-gold);
-  color: #111111;
-  font-weight: 600;
+  color: #ffffff;
+  font-weight: 700;
   font-size: 0.98rem;
   text-decoration: none;
-  box-shadow: 0 25px 50px rgba(212, 175, 55, 0.25);
+  box-shadow: 0 25px 50px rgba(10, 92, 255, 0.28);
   transition: background 0.2s ease, transform 0.2s ease;
 }
 
@@ -745,7 +750,7 @@ h1 {
   font-size: 0.92rem;
   color: var(--land-muted);
   text-decoration: none;
-  border-bottom: 1px solid rgba(141, 148, 161, 0.4);
+  border-bottom: 1px solid rgba(92, 107, 132, 0.35);
   padding-bottom: 2px;
   transition: color 0.2s ease, border-color 0.2s ease;
 }
@@ -786,7 +791,7 @@ h1 {
   border-radius: 18px;
   padding: 22px 22px 20px;
   backdrop-filter: blur(28px);
-  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 30px 70px rgba(11, 26, 58, 0.12), 0 2px 8px rgba(11, 26, 58, 0.06);
   animation: panelFloat 8s ease-in-out infinite;
 }
 
@@ -851,8 +856,8 @@ h1 {
   height: 38px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--land-gold-light), var(--land-gold) 60%, var(--land-gold-dark));
-  color: #14100a;
-  box-shadow: 0 12px 26px -8px rgba(212, 175, 55, 0.5);
+  color: #ffffff;
+  box-shadow: 0 12px 26px -8px rgba(10, 92, 255, 0.4);
 }
 
 .connector-badge svg {
@@ -885,7 +890,7 @@ h1 {
 
 .chat-bubble.guest {
   align-self: flex-start;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(11, 26, 58, 0.045);
   color: var(--land-text);
   border: 1px solid var(--land-border);
   border-bottom-left-radius: 4px;
@@ -893,7 +898,7 @@ h1 {
 
 .chat-bubble.hobs {
   align-self: flex-end;
-  background: rgba(255, 255, 255, 0.045);
+  background: rgba(10, 92, 255, 0.06);
   color: var(--land-text);
   border: 1px solid var(--land-border);
   border-bottom-right-radius: 4px;
@@ -926,7 +931,7 @@ h1 {
   align-items: center;
   gap: 4px;
   padding: 13px 16px;
-  background: rgba(255, 255, 255, 0.045);
+  background: rgba(11, 26, 58, 0.045);
   border: 1px solid var(--land-border);
   animation: typingInOut 1s ease forwards;
   animation-delay: 0.4s;
@@ -1101,7 +1106,7 @@ h1 {
 
 .landing-h2 {
   font-family: var(--land-font);
-  font-weight: 600;
+  font-weight: 800;
   font-size: 1.7rem;
   color: var(--land-text);
   text-align: center;
@@ -1125,7 +1130,7 @@ h1 {
   right: calc(16.5% + 4px);
   height: 1px;
   background: linear-gradient(90deg, var(--land-gold), var(--land-emerald));
-  opacity: 0.25;
+  opacity: 0.4;
 }
 
 .how-node {
@@ -1201,7 +1206,7 @@ h1 {
 
 .quote-text {
   font-family: var(--land-font);
-  font-weight: 600;
+  font-weight: 800;
   font-size: clamp(1.5rem, 3.2vw, 2.15rem);
   line-height: 1.4;
   letter-spacing: -0.01em;
@@ -1251,16 +1256,16 @@ h1 {
 .cta-panel h2 {
   position: relative;
   font-family: var(--land-font);
-  font-weight: 600;
+  font-weight: 800;
   font-size: 1.6rem;
-  color: #1c1508;
+  color: #ffffff;
   margin: 0 0 8px;
 }
 
 .cta-panel p {
   position: relative;
   margin: 0;
-  color: rgba(28, 21, 8, 0.72);
+  color: rgba(255, 255, 255, 0.85);
   font-size: 0.96rem;
   max-width: 44ch;
 }
@@ -1271,13 +1276,13 @@ h1 {
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
-  padding: 15px 26px;
-  border-radius: 10px;
-  background: #111111;
-  color: var(--land-text);
+  padding: 15px 28px;
+  border-radius: 999px;
+  background: #0b1a3a;
+  color: #ffffff;
   text-decoration: none;
   flex-shrink: 0;
-  box-shadow: 0 20px 40px -18px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 20px 40px -18px rgba(11, 26, 58, 0.55);
   transition: transform 0.2s ease;
 }
 
@@ -1286,14 +1291,14 @@ h1 {
 }
 
 .btn-dark .btn-dark-label {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.96rem;
 }
 
 .btn-dark .btn-dark-sub {
   font-weight: 400;
   font-size: 0.74rem;
-  color: var(--land-muted);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 @media (max-width: 760px) {

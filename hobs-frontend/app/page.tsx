@@ -1,5 +1,29 @@
 import Link from "next/link";
 
+function IconSparkle() {
+  return (
+    <svg viewBox="0 0 16 16" fill="currentColor">
+      <path d="M8 0c.4 2.9 1 4.6 1.8 5.4C10.6 6.2 12.3 6.8 15 7c-2.7.2-4.4.8-5.2 1.6C9 9.4 8.4 11.1 8 14c-.4-2.9-1-4.6-1.8-5.4C5.4 7.8 3.7 7.2 1 7c2.7-.2 4.4-.8 5.2-1.6C7 4.6 7.6 2.9 8 0Z" />
+    </svg>
+  );
+}
+
+function IconCheck() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 8.5 6.2 12 13 4" />
+    </svg>
+  );
+}
+
+function IconArrow() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 8h11M9 4l4 4-4 4" />
+    </svg>
+  );
+}
+
 function IconMessage() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -46,100 +70,139 @@ export default function HomePage() {
           </Link>
           <nav className="landing-nav" aria-label="Site">
             <Link href="/docs">Docs</Link>
-            <Link href="/login" className="landing-nav-cta">
-              Sign in
-            </Link>
+            <Link href="/login">Sign in</Link>
           </nav>
         </div>
       </header>
 
       <main>
+        {/* ── Hero ─────────────────────────────────────────────────────── */}
         <section className="landing-hero">
-          <div className="hero-orbs" aria-hidden="true">
-            <span className="orb orb-gold" />
-            <span className="orb orb-emerald" />
-            <span className="orb orb-coral" />
-          </div>
-          <div className="hero-grain" aria-hidden="true" />
-
-          <div className="landing-shell hero-inner">
+          <div className="landing-shell">
             <div className="hero-copy">
-              <span className="hero-eyebrow">
-                <span className="hero-eyebrow-dot" />
+              <span className="hero-kicker">
+                <IconSparkle />
                 Hotel bookings, over WhatsApp
               </span>
+
               <h1 className="hero-title">
-                Let guests book a room <em>the way they already message you.</em>
+                Your hotel&rsquo;s smartest receptionist lives inside{" "}
+                <span className="gold-text">WhatsApp</span>.
               </h1>
-              <p className="hero-subtitle">
-                HoBS answers guest chats on WhatsApp, checks room availability,
-                takes payment, and drops the confirmed booking straight into
-                your dashboard. No app for guests to download, no manual
-                back-and-forth for you.
+
+              <p className="hero-loss">
+                Every missed reply is <strong>another booking walking into another hotel.</strong>{" "}
+                HoBS answers instantly, takes payment, and confirms the room — before the guest
+                thinks to message anyone else.
               </p>
+
               <div className="hero-actions">
-                <Link href="/get-started" className="btn-glow">
-                  Apply to onboard your hotel
+                <Link href="/get-started" className="btn-gold">
+                  Start for ₦0 today
                 </Link>
                 <Link href="/login" className="hero-link">
                   Already approved? Sign in
                 </Link>
               </div>
+              <p className="hero-microcopy">
+                No setup fee. Applications are reviewed within 1–2 business days.
+              </p>
             </div>
 
             <div className="hero-visual" aria-hidden="true">
-              <svg className="flow-line" viewBox="0 0 400 190" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="flowGradient" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor="#34d399" />
-                    <stop offset="55%" stopColor="#e7b24b" />
-                    <stop offset="100%" stopColor="#ff7a59" />
-                  </linearGradient>
-                </defs>
-                <path d="M200,0 L200,60 M200,60 C200,95 140,95 108,148 M200,60 C200,95 260,95 292,148" />
-              </svg>
-
-              <div className="chat-card">
-                <div className="chat-card-label">
+              <div className="glass-panel chat-panel">
+                <div className="panel-label">
                   <span className="live-dot" />
                   Guest chat · WhatsApp
                 </div>
                 <div className="chat-thread">
-                  <div className="chat-bubble guest">
+                  <div className="chat-bubble guest" style={{ animationDelay: "0.1s" }}>
                     Do you have a room for 2 nights from Fri?
                   </div>
-                  <div className="chat-bubble hobs">
-                    Yes — Standard Queen is open. ₦45,000/night. Pay now to
-                    confirm?
+                  <div className="reply-slot">
+                    <div className="chat-bubble typing">
+                      <span />
+                      <span />
+                      <span />
+                    </div>
+                    <div className="chat-bubble hobs" style={{ animationDelay: "1.3s" }}>
+                      Yes — Standard Queen is open. <span className="gold-text">₦45,000/night.</span>{" "}
+                      Pay now to confirm?
+                    </div>
                   </div>
-                  <div className="chat-bubble guest">Yes please</div>
-                  <div className="chat-bubble hobs">
+                  <div className="chat-bubble guest" style={{ animationDelay: "1.7s" }}>
+                    Yes please
+                  </div>
+                  <div className="chat-bubble hobs success" style={{ animationDelay: "2.1s" }}>
                     Payment received ✅ Room 204 booked, Fri–Sun. See you then!
                   </div>
                 </div>
               </div>
 
-              <div className="flow-chips">
-                <div className="flow-chip chip-emerald">
-                  <span className="chip-dot" />
-                  Room 204 · Booked
+              <div className="hero-connector">
+                <span className="connector-badge">
+                  <IconArrow />
+                </span>
+              </div>
+
+              <div className="glass-panel summary-panel">
+                <div className="panel-label">
+                  <span className="live-dot" />
+                  Dashboard · Booking summary
                 </div>
-                <div className="flow-chip chip-gold">
-                  <span className="chip-dot" />
-                  Synced to dashboard
+                <div className="summary-rows">
+                  <div className="summary-row" style={{ animationDelay: "2.3s" }}>
+                    <span className="summary-check">
+                      <IconCheck />
+                    </span>
+                    <span className="summary-text">
+                      Payment received · <span className="value">₦45,000</span>
+                    </span>
+                  </div>
+                  <div className="summary-row" style={{ animationDelay: "2.55s" }}>
+                    <span className="summary-check">
+                      <IconCheck />
+                    </span>
+                    <span className="summary-text">Room 204 assigned · Fri–Sun</span>
+                  </div>
+                  <div className="summary-row" style={{ animationDelay: "2.8s" }}>
+                    <span className="summary-check">
+                      <IconCheck />
+                    </span>
+                    <span className="summary-text">Dashboard updated</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
+        {/* ── Urgency: sell the loss ──────────────────────────────────── */}
+        <section className="landing-urgent">
+          <div className="landing-shell urgent-inner">
+            <p className="urgent-kicker">Right now, somewhere, a guest is messaging your hotel</p>
+            <ul className="urgent-list">
+              <li>While you&rsquo;re asleep.</li>
+              <li>While you&rsquo;re driving.</li>
+              <li>While you&rsquo;re serving another guest.</li>
+              <li>While your front desk is busy with someone else.</li>
+            </ul>
+            <p className="urgent-beat">
+              If nobody replies in the next few minutes, they won&rsquo;t wait. They&rsquo;ll message
+              the next hotel on their list.
+            </p>
+            <p className="urgent-punch gold-text">HoBS makes sure that never happens.</p>
+          </div>
+        </section>
+
+        {/* ── How it works ────────────────────────────────────────────── */}
         <section className="landing-how">
           <div className="landing-shell">
-            <h2 className="landing-h2">How it works</h2>
+            <h2 className="landing-h2">A guest messages. You do nothing else.</h2>
             <div className="how-flow">
               <div className="how-node">
                 <div className="how-node-top">
-                  <span className="how-icon icon-emerald">
+                  <span className="how-icon">
                     <IconMessage />
                   </span>
                   <span className="how-index">01</span>
@@ -149,42 +212,55 @@ export default function HomePage() {
 
               <div className="how-node">
                 <div className="how-node-top">
-                  <span className="how-icon icon-gold">
+                  <span className="how-icon">
                     <IconReceipt />
                   </span>
                   <span className="how-index">02</span>
                 </div>
-                <p>
-                  HoBS checks availability, quotes a price, and takes payment
-                  right in the chat.
-                </p>
+                <p>HoBS checks availability, quotes a price, and takes payment right in the chat.</p>
               </div>
 
               <div className="how-node">
                 <div className="how-node-top">
-                  <span className="how-icon icon-coral">
+                  <span className="how-icon">
                     <IconDashboard />
                   </span>
                   <span className="how-index">03</span>
                 </div>
                 <p>
-                  You see the confirmed booking on your dashboard — nothing to
-                  copy from chat to spreadsheet.
+                  You see the confirmed booking on your dashboard — nothing to copy from chat to
+                  spreadsheet.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
+        {/* ── Reframe ──────────────────────────────────────────────────── */}
+        <section className="landing-quote">
+          <div className="landing-shell quote-inner">
+            <p className="quote-text">
+              Hotels rarely lose bookings because they&rsquo;re full. They lose them because they
+              replied <span className="gold-text">too late.</span>
+            </p>
+            <p className="quote-sub">HoBS replies in seconds, every time — day, night, and everything after.</p>
+          </div>
+        </section>
+
+        {/* ── CTA ──────────────────────────────────────────────────────── */}
         <section className="landing-cta">
           <div className="landing-shell">
             <div className="cta-panel">
               <div>
-                <h2>Ready to stop booking rooms by hand?</h2>
-                <p>Applications are reviewed by our team, usually within 1–2 business days.</p>
+                <h2>Every conversation is an opportunity.</h2>
+                <p>
+                  Let HoBS handle the chat while your team looks after the guests already through
+                  your doors.
+                </p>
               </div>
               <Link href="/get-started" className="btn-dark">
-                Apply to onboard your hotel
+                <span className="btn-dark-label">Start for ₦0 today</span>
+                <span className="btn-dark-sub">Setup is free. We only get paid when you do.</span>
               </Link>
             </div>
           </div>

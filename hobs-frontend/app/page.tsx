@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect } from "react";
 
 function IconSparkle() {
   return (
@@ -54,6 +57,26 @@ function IconDashboard() {
 }
 
 export default function HomePage() {
+  useEffect(() => {
+    const targets = document.querySelectorAll("[data-reveal]");
+    if (!targets.length) return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            io.unobserve(entry.target);
+          }
+        }
+      },
+      { threshold: 0.2, rootMargin: "0px 0px -10% 0px" }
+    );
+
+    targets.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
   return (
     <div className="landing">
       <div className="landing-aurora" aria-hidden="true">
@@ -189,30 +212,30 @@ export default function HomePage() {
         {/* ── Urgency: sell the loss ──────────────────────────────────── */}
         <section className="landing-urgent">
           <div className="landing-shell urgent-inner">
-            <p className="urgent-kicker">Right now, somewhere, a guest is messaging your hotel</p>
+            <p className="urgent-kicker" data-reveal>Right now, somewhere, a guest is messaging your hotel</p>
             <ul className="urgent-list">
-              <li>While you&rsquo;re asleep.</li>
-              <li>While you&rsquo;re driving.</li>
-              <li>While you&rsquo;re serving another guest.</li>
-              <li>While your front desk is busy with someone else.</li>
+              <li data-reveal>While you&rsquo;re asleep.</li>
+              <li data-reveal>While you&rsquo;re driving.</li>
+              <li data-reveal>While you&rsquo;re serving another guest.</li>
+              <li data-reveal>While your front desk is busy with someone else.</li>
             </ul>
-            <p className="urgent-beat">
+            <p className="urgent-beat" data-reveal>
               If nobody replies in the next few minutes, they won&rsquo;t wait. They&rsquo;ll message
               the next hotel on their list.
             </p>
-            <p className="urgent-punch gold-text">HoBS makes sure that never happens.</p>
+            <p className="urgent-punch gold-text" data-reveal>HoBS makes sure that never happens.</p>
           </div>
         </section>
 
         {/* ── How it works ────────────────────────────────────────────── */}
         <section className="landing-how">
           <div className="landing-shell">
-            <div className="how-head">
+            <div className="how-head" data-reveal>
               <span className="how-eyebrow">The process</span>
               <h2 className="landing-h2">A guest messages. You do nothing else.</h2>
             </div>
             <div className="how-flow">
-              <div className="how-node">
+              <div className="how-node" data-reveal>
                 <div className="how-node-top">
                   <span className="how-icon">
                     <IconMessage />
@@ -222,7 +245,7 @@ export default function HomePage() {
                 <p>A guest messages your WhatsApp number asking about a room.</p>
               </div>
 
-              <div className="how-node">
+              <div className="how-node" data-reveal>
                 <div className="how-node-top">
                   <span className="how-icon">
                     <IconReceipt />
@@ -232,7 +255,7 @@ export default function HomePage() {
                 <p>HoBS checks availability, quotes a price, and takes payment right in the chat.</p>
               </div>
 
-              <div className="how-node">
+              <div className="how-node" data-reveal>
                 <div className="how-node-top">
                   <span className="how-icon">
                     <IconDashboard />
@@ -251,7 +274,7 @@ export default function HomePage() {
         {/* ── Reframe ──────────────────────────────────────────────────── */}
         <section className="landing-quote">
           <div className="landing-shell">
-          <div className="quote-inner">
+          <div className="quote-inner" data-reveal>
             <span className="quote-mark" aria-hidden="true">&ldquo;</span>
             <p className="quote-text">
               Hotels rarely lose bookings because they&rsquo;re full. They lose them because they
@@ -265,7 +288,7 @@ export default function HomePage() {
         {/* ── CTA ──────────────────────────────────────────────────────── */}
         <section className="landing-cta">
           <div className="landing-shell">
-            <div className="cta-panel">
+            <div className="cta-panel" data-reveal="pop">
               <div>
                 <h2>Every conversation is an opportunity.</h2>
                 <p>

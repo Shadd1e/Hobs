@@ -1,24 +1,53 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
-import { HeroMosaic } from "@/components/HeroMosaic";
 
 export default function HomePage() {
   return (
     <>
       <SiteHeader />
 
-      <HeroMosaic brand="HoBS" statement="Bookings, handled in the chat">
-        <div className="hero-cta-row">
-          <Link href="/get-started" className="btn">
-            Apply to onboard your hotel
-          </Link>
-          <Link href="/login" className="text-link">
-            Already approved? Sign in
-          </Link>
-        </div>
-      </HeroMosaic>
-
       <main className="shell">
+        <section className="hero">
+          <div className="hero-grid">
+            <div className="hero-copy">
+              <p className="eyebrow">Hotel bookings, over WhatsApp</p>
+              <h1>Let guests book a room the way they already message you.</h1>
+              <p className="subtitle">
+                HoBS answers guest chats on WhatsApp, checks room availability,
+                takes payment, and drops the confirmed booking straight into
+                your dashboard. No app for guests to download, no manual
+                back-and-forth for you.
+              </p>
+              <div className="hero-cta-row">
+                <Link href="/get-started" className="btn">
+                  Apply to onboard your hotel
+                </Link>
+                <Link href="/login" className="text-link">
+                  Already approved? Sign in
+                </Link>
+              </div>
+            </div>
+
+            <div className="folio" aria-hidden="true">
+              <div className="folio-label">Guest chat · WhatsApp</div>
+              <div className="chat-thread">
+                <div className="chat-bubble guest">
+                  Do you have a room for 2 nights from Fri?
+                </div>
+                <div className="chat-bubble hobs">
+                  Yes — Standard Queen is open. ₦45,000/night. Pay now to
+                  confirm?
+                </div>
+                <div className="chat-bubble guest">Yes please</div>
+                <div className="chat-bubble hobs">
+                  Payment received ✅ Room 204 booked, Fri–Sun. See you then!
+                </div>
+              </div>
+              <div className="folio-foot">BOOKING CONFIRMED · NO APP NEEDED</div>
+            </div>
+          </div>
+        </section>
+
         <section className="how-it-works">
           <h2>How it works</h2>
           <div className="how-grid">

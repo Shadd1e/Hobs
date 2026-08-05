@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 const PHRASES = [
   "Your hotel's smartest receptionist lives inside WhatsApp.",
@@ -10,14 +10,6 @@ const PHRASES = [
   "HoBS replies in seconds. Day, night, and everything after.",
   "A guest messages. You do nothing else.",
 ];
-
-function IconSparkle() {
-  return (
-    <svg viewBox="0 0 16 16" fill="currentColor">
-      <path d="M8 0c.4 2.9 1 4.6 1.8 5.4C10.6 6.2 12.3 6.8 15 7c-2.7.2-4.4.8-5.2 1.6C9 9.4 8.4 11.1 8 14c-.4-2.9-1-4.6-1.8-5.4C5.4 7.8 3.7 7.2 1 7c2.7-.2 4.4-.8 5.2-1.6C7 4.6 7.6 2.9 8 0Z" />
-    </svg>
-  );
-}
 
 function IconClose() {
   return (
@@ -36,9 +28,10 @@ function IconCheck() {
 }
 
 /**
- * Types the given phrases out one character at a time, pauses, deletes, and
- * moves to the next phrase — looping forever. Falls back to a plain,
- * un-jittery crossfade for anyone with prefers-reduced-motion set.
+ * Types the given phrases out one character at a time, pauses on the full
+ * phrase, deletes it, then moves to the next — looping forever. Speed
+ * jitters slightly per character and slows after punctuation so it reads
+ * like an actual person typing rather than a metronome.
  */
 type TypewriterOptions = {
   typingSpeed?: number;
@@ -48,52 +41,42 @@ type TypewriterOptions = {
 
 function useTypewriter(
   phrases: string[],
-  { typingSpeed = 42, deletingSpeed = 24, pause = 1900 }: TypewriterOptions = {}
+  { typingSpeed = 58, deletingSpeed = 28, pause = 2000 }: TypewriterOptions = {}
 ) {
   const [index, setIndex] = useState(0);
   const [text, setText] = useState("");
-  const [phase, setPhase] = useState<"typing" | "deleting">("typing");
-  const reducedMotionRef = useRef(false);
+  const [phase, setPhase] = useState<"typing" | "holding" | "deleting" | "waiting">("typing");
 
   useEffect(() => {
-    reducedMotionRef.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reducedMotionRef.current) {
-      setText(phrases[0] ?? "");
-    }
-  }, [phrases]);
-
-  useEffect(() => {
-    if (reducedMotionRef.current) {
-      const interval = setInterval(() => {
-        setIndex((i) => (i + 1) % phrases.length);
-      }, 3400);
-      return () => clearInterval(interval);
-    }
-
     const current = phrases[index % phrases.length] ?? "";
     let timeout: ReturnType<typeof setTimeout>;
 
     if (phase === "typing") {
       if (text.length < current.length) {
-        timeout = setTimeout(() => setText(current.slice(0, text.length + 1)), typingSpeed);
+        const lastChar = current[text.length - 1] ?? "";
+        const nextChar = current[text.length] ?? "";
+        let delay = typingSpeed + Math.random() * 55;
+        if (nextChar === " ") delay *= 0.5;
+        if (".,!?—".includes(lastChar)) delay += 260;
+        timeout = setTimeout(() => setText(current.slice(0, text.length + 1)), delay);
       } else {
-        timeout = setTimeout(() => setPhase("deleting"), pause);
+        timeout = setTimeout(() => setPhase("holding"), pause);
       }
-    } else {
+    } else if (phase === "holding") {
+      setPhase("deleting");
+    } else if (phase === "deleting") {
       if (text.length > 0) {
         timeout = setTimeout(() => setText(current.slice(0, text.length - 1)), deletingSpeed);
       } else {
-        setPhase("typing");
-        setIndex((i) => (i + 1) % phrases.length);
+        timeout = setTimeout(() => setPhase("waiting"), 320);
       }
+    } else {
+      setPhase("typing");
+      setIndex((i) => (i + 1) % phrases.length);
     }
 
     return () => clearTimeout(timeout);
   }, [text, phase, index, phrases, typingSpeed, deletingSpeed, pause]);
-
-  useEffect(() => {
-    if (reducedMotionRef.current) setText(phrases[index] ?? "");
-  }, [index, phrases]);
 
   return text;
 }
@@ -243,11 +226,6 @@ export default function HomePage() {
       <main className="hero-single">
         <div className="landing-shell">
           <div className="hero-single-inner">
-            <span className="hero-kicker">
-              <IconSparkle />
-              Hotel bookings, over WhatsApp
-            </span>
-
             <h1 className="type-headline">
               <span className="sr-only">{PHRASES.join(" ")}</span>
               <span aria-hidden="true" className="type-headline-text">

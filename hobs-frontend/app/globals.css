@@ -800,18 +800,6 @@ h1 {
   max-width: 760px;
 }
 
-.hero-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--land-teal);
-  margin: 0 0 22px;
-}
-
 .type-headline {
   font-family: var(--land-font);
   font-weight: 700;

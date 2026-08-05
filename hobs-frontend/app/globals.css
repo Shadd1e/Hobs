@@ -1295,66 +1295,95 @@ h1 {
 .how-flow {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  max-width: 980px;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  gap: 20px;
+  align-items: start;
+  max-width: 1020px;
   margin: 0 auto;
-}
-
-.how-flow::before {
-  content: "";
-  position: absolute;
-  top: 27px;
-  left: calc(16.5% + 4px);
-  right: calc(16.5% + 4px);
-  height: 1px;
-  background: linear-gradient(90deg, var(--land-gold), var(--land-emerald));
-  opacity: 0.4;
 }
 
 .how-node {
   position: relative;
-  padding: 26px 22px 24px;
-  border-radius: 16px;
-  background: var(--land-surface);
-  border: 1px solid var(--land-border);
+  padding: 6px 4px 0;
 }
 
 .how-node-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 18px;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .how-icon {
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  background: var(--land-elevated);
-  color: var(--land-text);
+  width: 34px;
+  height: 34px;
   flex-shrink: 0;
+  color: var(--land-gold);
 }
 
 .how-icon svg {
-  width: 21px;
-  height: 21px;
+  width: 22px;
+  height: 22px;
 }
 
 .how-index {
   font-family: var(--land-font);
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: var(--land-gold);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  color: var(--land-muted);
 }
 
 .how-node p {
   margin: 0;
   font-size: 0.96rem;
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--land-muted);
+}
+
+/* The step that actually makes the sale — pulled forward, given real card
+   chrome, while the two supporting steps stay flat and quiet beside it. */
+
+.how-node-primary {
+  padding: 30px 26px 28px;
+  border-radius: 20px;
+  background: var(--land-elevated);
+  border: 1px solid var(--land-border);
+  box-shadow: 0 26px 54px rgba(11, 26, 58, 0.1);
+}
+
+.how-node-primary .how-node-top {
+  margin-bottom: 18px;
+}
+
+.how-node-primary .how-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, var(--land-gold-light), var(--land-gold) 60%, var(--land-gold-dark));
+  color: #ffffff;
+}
+
+.how-node-primary .how-icon svg {
+  width: 21px;
+  height: 21px;
+}
+
+.how-node-primary .how-index {
+  color: var(--land-gold);
+}
+
+.how-node-primary p {
+  color: var(--land-text);
+  font-size: 1rem;
+}
+
+@media (min-width: 761px) {
+  .how-node-primary {
+    margin-top: -18px;
+  }
 }
 
 @media (max-width: 760px) {
@@ -1364,10 +1393,7 @@ h1 {
 
   .how-flow {
     grid-template-columns: 1fr;
-  }
-
-  .how-flow::before {
-    display: none;
+    gap: 28px;
   }
 }
 

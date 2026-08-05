@@ -245,7 +245,7 @@ export default function HomePage() {
                 <p>A guest messages your WhatsApp number asking about a room.</p>
               </div>
 
-              <div className="how-node" data-reveal>
+              <div className="how-node how-node-primary" data-reveal>
                 <div className="how-node-top">
                   <span className="how-icon">
                     <IconReceipt />

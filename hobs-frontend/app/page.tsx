@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
 const PHRASES = [
   "Your hotel's smartest receptionist lives inside WhatsApp.",
@@ -40,10 +40,19 @@ function IconCheck() {
  * moves to the next phrase — looping forever. Falls back to a plain,
  * un-jittery crossfade for anyone with prefers-reduced-motion set.
  */
-function useTypewriter(phrases, { typingSpeed = 42, deletingSpeed = 24, pause = 1900 } = {}) {
+type TypewriterOptions = {
+  typingSpeed?: number;
+  deletingSpeed?: number;
+  pause?: number;
+};
+
+function useTypewriter(
+  phrases: string[],
+  { typingSpeed = 42, deletingSpeed = 24, pause = 1900 }: TypewriterOptions = {}
+) {
   const [index, setIndex] = useState(0);
   const [text, setText] = useState("");
-  const [phase, setPhase] = useState("typing");
+  const [phase, setPhase] = useState<"typing" | "deleting">("typing");
   const reducedMotionRef = useRef(false);
 
   useEffect(() => {
@@ -89,13 +98,18 @@ function useTypewriter(phrases, { typingSpeed = 42, deletingSpeed = 24, pause = 
   return text;
 }
 
-function GetStartedModal({ open, onClose }) {
+type GetStartedModalProps = {
+  open: boolean;
+  onClose: () => void;
+};
+
+function GetStartedModal({ open, onClose }: GetStartedModalProps) {
   const [form, setForm] = useState({ hotel: "", whatsapp: "", email: "" });
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e) => {
+    const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
@@ -104,7 +118,7 @@ function GetStartedModal({ open, onClose }) {
 
   if (!open) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // No backend wired up yet — swap this for a real submit (API route,
     // WhatsApp webhook, form service, etc.) when you're ready to go live.

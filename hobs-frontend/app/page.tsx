@@ -58,7 +58,7 @@ function useTypewriter(
   useEffect(() => {
     reducedMotionRef.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reducedMotionRef.current) {
-      setText(phrases[0]);
+      setText(phrases[0] ?? "");
     }
   }, [phrases]);
 
@@ -70,7 +70,7 @@ function useTypewriter(
       return () => clearInterval(interval);
     }
 
-    const current = phrases[index % phrases.length];
+    const current = phrases[index % phrases.length] ?? "";
     let timeout;
 
     if (phase === "typing") {
@@ -92,7 +92,7 @@ function useTypewriter(
   }, [text, phase, index, phrases, typingSpeed, deletingSpeed, pause]);
 
   useEffect(() => {
-    if (reducedMotionRef.current) setText(phrases[index]);
+    if (reducedMotionRef.current) setText(phrases[index] ?? "");
   }, [index, phrases]);
 
   return text;

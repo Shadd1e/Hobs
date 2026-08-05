@@ -1,12 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+
+const PHRASES = [
+  "Your hotel's smartest receptionist lives inside WhatsApp.",
+  "Every missed reply is another booking walking into another hotel.",
+  "Hotels rarely lose bookings because they're full — they lose them because they replied too late.",
+  "HoBS replies in seconds. Day, night, and everything after.",
+  "A guest messages. You do nothing else.",
+];
 
 function IconSparkle() {
   return (
     <svg viewBox="0 0 16 16" fill="currentColor">
       <path d="M8 0c.4 2.9 1 4.6 1.8 5.4C10.6 6.2 12.3 6.8 15 7c-2.7.2-4.4.8-5.2 1.6C9 9.4 8.4 11.1 8 14c-.4-2.9-1-4.6-1.8-5.4C5.4 7.8 3.7 7.2 1 7c2.7-.2 4.4-.8 5.2-1.6C7 4.6 7.6 2.9 8 0Z" />
+    </svg>
+  );
+}
+
+function IconClose() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+      <path d="M3 3l10 10M13 3 3 13" />
     </svg>
   );
 }
@@ -19,71 +35,174 @@ function IconCheck() {
   );
 }
 
-function IconArrow() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 8h11M9 4l4 4-4 4" />
-    </svg>
-  );
+/**
+ * Types the given phrases out one character at a time, pauses, deletes, and
+ * moves to the next phrase — looping forever. Falls back to a plain,
+ * un-jittery crossfade for anyone with prefers-reduced-motion set.
+ */
+function useTypewriter(phrases, { typingSpeed = 42, deletingSpeed = 24, pause = 1900 } = {}) {
+  const [index, setIndex] = useState(0);
+  const [text, setText] = useState("");
+  const [phase, setPhase] = useState("typing");
+  const reducedMotionRef = useRef(false);
+
+  useEffect(() => {
+    reducedMotionRef.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reducedMotionRef.current) {
+      setText(phrases[0]);
+    }
+  }, [phrases]);
+
+  useEffect(() => {
+    if (reducedMotionRef.current) {
+      const interval = setInterval(() => {
+        setIndex((i) => (i + 1) % phrases.length);
+      }, 3400);
+      return () => clearInterval(interval);
+    }
+
+    const current = phrases[index % phrases.length];
+    let timeout;
+
+    if (phase === "typing") {
+      if (text.length < current.length) {
+        timeout = setTimeout(() => setText(current.slice(0, text.length + 1)), typingSpeed);
+      } else {
+        timeout = setTimeout(() => setPhase("deleting"), pause);
+      }
+    } else {
+      if (text.length > 0) {
+        timeout = setTimeout(() => setText(current.slice(0, text.length - 1)), deletingSpeed);
+      } else {
+        setPhase("typing");
+        setIndex((i) => (i + 1) % phrases.length);
+      }
+    }
+
+    return () => clearTimeout(timeout);
+  }, [text, phase, index, phrases, typingSpeed, deletingSpeed, pause]);
+
+  useEffect(() => {
+    if (reducedMotionRef.current) setText(phrases[index]);
+  }, [index, phrases]);
+
+  return text;
 }
 
-function IconMessage() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v7A2.5 2.5 0 0 1 17.5 15H10l-4.5 4V15h-1A2.5 2.5 0 0 1 2 12.5v-5" />
-      <path d="M8 8.5h8M8 11.5h5" />
-    </svg>
-  );
-}
+function GetStartedModal({ open, onClose }) {
+  const [form, setForm] = useState({ hotel: "", whatsapp: "", email: "" });
+  const [submitted, setSubmitted] = useState(false);
 
-function IconReceipt() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 3h12v18l-2.5-1.5L13 21l-1-1.5-1 1.5-2.5-1.5L6 21Z" />
-      <path d="M9 8h6M9 11.5h6M9 15h3.5" />
-    </svg>
-  );
-}
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
 
-function IconDashboard() {
+  if (!open) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // No backend wired up yet — swap this for a real submit (API route,
+    // WhatsApp webhook, form service, etc.) when you're ready to go live.
+    setSubmitted(true);
+  };
+
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.6" />
-      <rect x="13" y="3.5" width="7.5" height="4.5" rx="1.6" />
-      <rect x="13" y="10.5" width="7.5" height="10" rx="1.6" />
-      <rect x="3.5" y="13.5" width="7.5" height="7" rx="1.6" />
-    </svg>
+    <div
+      className="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+      onClick={onClose}
+    >
+      <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose} aria-label="Close">
+          <IconClose />
+        </button>
+
+        {!submitted ? (
+          <>
+            <span className="modal-eyebrow">Start for ₦0 today</span>
+            <h2 id="modal-title" className="modal-title">
+              Tell us about your hotel
+            </h2>
+            <p className="modal-sub">No setup fee. We review applications within 1–2 business days.</p>
+
+            <form className="modal-form" onSubmit={handleSubmit}>
+              <label>
+                Hotel name
+                <input
+                  required
+                  type="text"
+                  value={form.hotel}
+                  onChange={(e) => setForm({ ...form, hotel: e.target.value })}
+                  placeholder="e.g. Lagoon View Hotel"
+                />
+              </label>
+              <label>
+                WhatsApp number
+                <input
+                  required
+                  type="tel"
+                  value={form.whatsapp}
+                  onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
+                  placeholder="+234 800 000 0000"
+                />
+              </label>
+              <label>
+                Email (optional)
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="you@hotel.com"
+                />
+              </label>
+              <button type="submit" className="btn-gold modal-submit">
+                Submit application
+              </button>
+            </form>
+          </>
+        ) : (
+          <div className="modal-success">
+            <span className="modal-success-icon">
+              <IconCheck />
+            </span>
+            <h2 className="modal-title">Application received</h2>
+            <p className="modal-sub">
+              We&rsquo;ll reach out on WhatsApp within 1–2 business days to get{" "}
+              {form.hotel || "your hotel"} set up.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
 export default function HomePage() {
+  const [modalOpen, setModalOpen] = useState(false);
+  const typed = useTypewriter(PHRASES);
+
   useEffect(() => {
-    const targets = document.querySelectorAll("[data-reveal]");
-    if (!targets.length) return;
-
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("is-visible");
-            io.unobserve(entry.target);
-          }
-        }
-      },
-      { threshold: 0.2, rootMargin: "0px 0px -10% 0px" }
-    );
-
-    targets.forEach((el) => io.observe(el));
-    return () => io.disconnect();
-  }, []);
+    document.body.style.overflow = modalOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [modalOpen]);
 
   return (
-    <div className="landing">
-      <div className="landing-aurora" aria-hidden="true">
+    <div className="landing landing-single">
+      <div className="landing-bg" aria-hidden="true">
+        <div className="bg-grid" />
         <span className="aurora-blob aurora-blob-a" />
         <span className="aurora-blob aurora-blob-b" />
         <span className="aurora-blob aurora-blob-c" />
-        <span className="aurora-blob aurora-blob-d" />
+        <div className="bg-vignette" />
       </div>
 
       <header className="landing-header">
@@ -100,220 +219,47 @@ export default function HomePage() {
           </Link>
           <nav className="landing-nav" aria-label="Site">
             <Link href="/docs">Docs</Link>
-            <Link href="/login">Sign in</Link>
+            <Link href="/login" className="landing-nav-signin">
+              Sign in
+            </Link>
           </nav>
         </div>
       </header>
 
-      <main>
-        {/* ── Hero ─────────────────────────────────────────────────────── */}
-        <section className="landing-hero">
-          <div className="landing-shell">
-          <div className="hero-grid">
-            <div className="hero-copy">
-              <span className="hero-kicker">
-                <IconSparkle />
-                Hotel bookings, over WhatsApp
+      <main className="hero-single">
+        <div className="landing-shell">
+          <div className="hero-single-inner">
+            <span className="hero-kicker">
+              <IconSparkle />
+              Hotel bookings, over WhatsApp
+            </span>
+
+            <h1 className="type-headline">
+              <span className="sr-only">{PHRASES.join(" ")}</span>
+              <span aria-hidden="true" className="type-headline-text">
+                {typed}
+                <span className="type-cursor" />
               </span>
+            </h1>
 
-              <h1 className="hero-title">
-                Your hotel&rsquo;s smartest receptionist lives inside{" "}
-                <span className="gold-text">WhatsApp</span>.
-              </h1>
-
-              <p className="hero-loss">
-                Every missed reply is <strong>another booking walking into another hotel.</strong>{" "}
-                HoBS answers instantly, takes payment, and confirms the room — before the guest
-                thinks to message anyone else.
-              </p>
-
-              <div className="hero-actions">
-                <Link href="/get-started" className="btn-gold">
-                  Start for ₦0 today
-                </Link>
-                <Link href="/login" className="hero-link">
-                  Already approved? Sign in
-                </Link>
-              </div>
-              <p className="hero-microcopy">
-                No setup fee. Applications are reviewed within 1–2 business days.
-              </p>
+            <div className="hero-single-actions">
+              <button className="btn-gold" onClick={() => setModalOpen(true)}>
+                Start for ₦0 today
+              </button>
+              <p className="hero-microcopy">No setup fee. Applications reviewed within 1–2 business days.</p>
             </div>
-
-            <div className="hero-visual" aria-hidden="true">
-              <div className="glass-panel chat-panel">
-                <div className="panel-label">
-                  <span className="live-dot" />
-                  Guest chat · WhatsApp
-                </div>
-                <div className="chat-thread">
-                  <div className="chat-bubble guest" style={{ animationDelay: "0.1s" }}>
-                    Do you have a room for 2 nights from Fri?
-                  </div>
-                  <div className="reply-slot">
-                    <div className="chat-bubble typing">
-                      <span />
-                      <span />
-                      <span />
-                    </div>
-                    <div className="chat-bubble hobs" style={{ animationDelay: "1.3s" }}>
-                      Yes — Standard Queen is open. <span className="gold-text">₦45,000/night.</span>{" "}
-                      Pay now to confirm?
-                    </div>
-                  </div>
-                  <div className="chat-bubble guest" style={{ animationDelay: "1.7s" }}>
-                    Yes please
-                  </div>
-                  <div className="chat-bubble hobs success" style={{ animationDelay: "2.1s" }}>
-                    Payment received ✅ Room 204 booked, Fri–Sun. See you then!
-                  </div>
-                </div>
-              </div>
-
-              <div className="hero-connector">
-                <span className="connector-badge">
-                  <IconArrow />
-                </span>
-              </div>
-
-              <div className="glass-panel summary-panel">
-                <div className="panel-label">
-                  <span className="live-dot" />
-                  Dashboard · Booking summary
-                </div>
-                <div className="summary-rows">
-                  <div className="summary-row" style={{ animationDelay: "2.3s" }}>
-                    <span className="summary-check">
-                      <IconCheck />
-                    </span>
-                    <span className="summary-text">
-                      Payment received · <span className="value">₦45,000</span>
-                    </span>
-                  </div>
-                  <div className="summary-row" style={{ animationDelay: "2.55s" }}>
-                    <span className="summary-check">
-                      <IconCheck />
-                    </span>
-                    <span className="summary-text">Room 204 assigned · Fri–Sun</span>
-                  </div>
-                  <div className="summary-row" style={{ animationDelay: "2.8s" }}>
-                    <span className="summary-check">
-                      <IconCheck />
-                    </span>
-                    <span className="summary-text">Dashboard updated</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          </div>
-        </section>
-
-        {/* ── Urgency: sell the loss ──────────────────────────────────── */}
-        <section className="landing-urgent">
-          <div className="landing-shell urgent-inner">
-            <p className="urgent-kicker" data-reveal>Right now, somewhere, a guest is messaging your hotel</p>
-            <ul className="urgent-list">
-              <li data-reveal>While you&rsquo;re asleep.</li>
-              <li data-reveal>While you&rsquo;re driving.</li>
-              <li data-reveal>While you&rsquo;re serving another guest.</li>
-              <li data-reveal>While your front desk is busy with someone else.</li>
-            </ul>
-            <p className="urgent-beat" data-reveal>
-              If nobody replies in the next few minutes, they won&rsquo;t wait. They&rsquo;ll message
-              the next hotel on their list.
-            </p>
-            <p className="urgent-punch gold-text" data-reveal>HoBS makes sure that never happens.</p>
-          </div>
-        </section>
-
-        {/* ── How it works ────────────────────────────────────────────── */}
-        <section className="landing-how">
-          <div className="landing-shell">
-            <div className="how-head" data-reveal>
-              <span className="how-eyebrow">The process</span>
-              <h2 className="landing-h2">A guest messages. You do nothing else.</h2>
-            </div>
-            <div className="how-flow">
-              <div className="how-node" data-reveal>
-                <div className="how-node-top">
-                  <span className="how-icon">
-                    <IconMessage />
-                  </span>
-                  <span className="how-index">01</span>
-                </div>
-                <p>A guest messages your WhatsApp number asking about a room.</p>
-              </div>
-
-              <div className="how-node how-node-primary" data-reveal>
-                <div className="how-node-top">
-                  <span className="how-icon">
-                    <IconReceipt />
-                  </span>
-                  <span className="how-index">02</span>
-                </div>
-                <p>HoBS checks availability, quotes a price, and takes payment right in the chat.</p>
-              </div>
-
-              <div className="how-node" data-reveal>
-                <div className="how-node-top">
-                  <span className="how-icon">
-                    <IconDashboard />
-                  </span>
-                  <span className="how-index">03</span>
-                </div>
-                <p>
-                  You see the confirmed booking on your dashboard — nothing to copy from chat to
-                  spreadsheet.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Reframe ──────────────────────────────────────────────────── */}
-        <section className="landing-quote">
-          <div className="landing-shell">
-          <div className="quote-inner" data-reveal>
-            <span className="quote-mark" aria-hidden="true">&ldquo;</span>
-            <p className="quote-text">
-              Hotels rarely lose bookings because they&rsquo;re full. They lose them because they
-              replied <span className="gold-text">too late.</span>
-            </p>
-            <p className="quote-sub">HoBS replies in seconds, every time — day, night, and everything after.</p>
-          </div>
-          </div>
-        </section>
-
-        {/* ── CTA ──────────────────────────────────────────────────────── */}
-        <section className="landing-cta">
-          <div className="landing-shell">
-            <div className="cta-panel" data-reveal="pop">
-              <div>
-                <h2>Every conversation is an opportunity.</h2>
-                <p>
-                  Let HoBS handle the chat while your team looks after the guests already through
-                  your doors.
-                </p>
-              </div>
-              <Link href="/get-started" className="btn-dark">
-                <span className="btn-dark-label">Start for ₦0 today</span>
-                <span className="btn-dark-sub">Setup is free. We only get paid when you do.</span>
-              </Link>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <footer className="landing-footer">
-        <div className="landing-shell landing-footer-inner">
-          <span>© {new Date().getFullYear()} HoBS</span>
-          <div className="landing-footer-links">
-            <Link href="/docs">Docs</Link>
-            <Link href="/terms">Terms</Link>
           </div>
         </div>
+      </main>
+
+      <footer className="landing-footer-single">
+        <div className="landing-shell landing-footer-single-inner">
+          <span>© {new Date().getFullYear()} HoBS</span>
+          <Link href="/terms">Terms</Link>
+        </div>
       </footer>
+
+      <GetStartedModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </div>
   );
 }

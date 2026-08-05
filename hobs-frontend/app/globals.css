@@ -749,10 +749,20 @@ h1 {
 }
 
 .landing-brand-word {
+  display: flex;
+  flex-direction: column;
   font-family: var(--land-font);
-  font-weight: 600;
-  font-size: 1.05rem;
+  font-weight: 700;
+  font-size: 1.02rem;
+  line-height: 1.15;
   letter-spacing: -0.02em;
+}
+
+.landing-brand-sub {
+  font-weight: 500;
+  font-size: 0.66rem;
+  letter-spacing: 0.02em;
+  color: var(--land-muted);
 }
 
 .landing-nav {
@@ -797,18 +807,28 @@ h1 {
 }
 
 .hero-single-inner {
-  max-width: 760px;
+  max-width: 780px;
+}
+
+.hero-lead {
+  font-family: var(--land-font);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.18;
+  font-size: clamp(1.7rem, 1rem + 2.9vw, 2.85rem);
+  color: var(--land-text);
+  margin: 0 0 20px;
 }
 
 .type-headline {
   font-family: var(--land-font);
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.16;
-  font-size: clamp(1.9rem, 1.15rem + 3.2vw, 3.15rem);
-  color: var(--land-text);
-  margin: 0 0 34px;
-  min-height: 3.7em;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.4;
+  font-size: clamp(1.05rem, 0.85rem + 0.9vw, 1.35rem);
+  color: var(--land-muted);
+  margin: 0 0 36px;
+  min-height: 2.8em;
   display: flex;
   align-items: flex-start;
 }
@@ -819,7 +839,7 @@ h1 {
 
 .type-cursor {
   display: inline-block;
-  width: 3px;
+  width: 2px;
   height: 0.95em;
   margin-left: 3px;
   background: var(--land-gold);
@@ -883,7 +903,7 @@ h1 {
   }
 
   .type-headline {
-    min-height: 4.6em;
+    min-height: 3.6em;
   }
 }
 

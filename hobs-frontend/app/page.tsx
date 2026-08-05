@@ -41,7 +41,7 @@ type TypewriterOptions = {
 
 function useTypewriter(
   phrases: string[],
-  { typingSpeed = 58, deletingSpeed = 28, pause = 2000 }: TypewriterOptions = {}
+  { typingSpeed = 22, deletingSpeed = 12, pause = 1500 }: TypewriterOptions = {}
 ) {
   const [index, setIndex] = useState(0);
   const [text, setText] = useState("");
@@ -55,9 +55,9 @@ function useTypewriter(
       if (text.length < current.length) {
         const lastChar = current[text.length - 1] ?? "";
         const nextChar = current[text.length] ?? "";
-        let delay = typingSpeed + Math.random() * 55;
+        let delay = typingSpeed + Math.random() * 24;
         if (nextChar === " ") delay *= 0.5;
-        if (".,!?—".includes(lastChar)) delay += 260;
+        if (".,!?—".includes(lastChar)) delay += 140;
         timeout = setTimeout(() => setText(current.slice(0, text.length + 1)), delay);
       } else {
         timeout = setTimeout(() => setPhase("holding"), pause);
@@ -68,7 +68,7 @@ function useTypewriter(
       if (text.length > 0) {
         timeout = setTimeout(() => setText(current.slice(0, text.length - 1)), deletingSpeed);
       } else {
-        timeout = setTimeout(() => setPhase("waiting"), 320);
+        timeout = setTimeout(() => setPhase("waiting"), 200);
       }
     } else {
       setPhase("typing");
@@ -204,7 +204,7 @@ export default function HomePage() {
 
       <header className="landing-header">
         <div className="landing-shell landing-header-inner">
-          <Link href="/" className="landing-brand" aria-label="HoBS — home">
+          <Link href="/" className="landing-brand" aria-label="The HoBS — home">
             <span className="landing-brand-mark" aria-hidden="true">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M2 7.5 8 3l6 4.5" />
@@ -212,7 +212,10 @@ export default function HomePage() {
                 <path d="M6.5 13V9.5h3V13" />
               </svg>
             </span>
-            <span className="landing-brand-word">HoBS</span>
+            <span className="landing-brand-word">
+              The HoBS
+              <span className="landing-brand-sub">Powered by Altekflo</span>
+            </span>
           </Link>
           <nav className="landing-nav" aria-label="Site">
             <Link href="/docs">Docs</Link>
@@ -226,13 +229,18 @@ export default function HomePage() {
       <main className="hero-single">
         <div className="landing-shell">
           <div className="hero-single-inner">
-            <h1 className="type-headline">
+            <h1 className="hero-lead">
+              You&rsquo;re here. Now you can accept{" "}
+              <span className="gold-text">BOOKINGS/RESERVATIONS</span> over a WhatsApp DM.
+            </h1>
+
+            <p className="type-headline">
               <span className="sr-only">{PHRASES.join(" ")}</span>
               <span aria-hidden="true" className="type-headline-text">
                 {typed}
                 <span className="type-cursor" />
               </span>
-            </h1>
+            </p>
 
             <div className="hero-single-actions">
               <button className="btn-gold" onClick={() => setModalOpen(true)}>

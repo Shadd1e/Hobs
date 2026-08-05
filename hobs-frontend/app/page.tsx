@@ -71,7 +71,7 @@ function useTypewriter(
     }
 
     const current = phrases[index % phrases.length] ?? "";
-    let timeout;
+    let timeout: ReturnType<typeof setTimeout>;
 
     if (phase === "typing") {
       if (text.length < current.length) {

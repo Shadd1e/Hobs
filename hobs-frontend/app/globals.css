@@ -96,6 +96,19 @@ h1 {
   outline-offset: 1px;
 }
 
+.field input::placeholder,
+.field textarea::placeholder {
+  color: var(--muted);
+  opacity: 0.55;
+  font-style: italic;
+}
+
+.field-suggestions {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
 .field-hint {
   font-size: 0.8rem;
   color: var(--muted);
@@ -557,7 +570,7 @@ h1 {
 
 /* ══════════════════════════════════════════════════════════════════════
    Landing page — one full-screen hero (app/page.tsx)
-   White canvas, deep navy ink, electric blue + mint as accents.
+   White canvas, night-bordeaux ink + accent, tinted rose surfaces.
    A rotating line of copy types itself out over an animated blueprint-grid
    background. Scoped entirely under .landing so it never touches the
    utilitarian styles used by dashboard / auth / docs pages above.
@@ -565,19 +578,20 @@ h1 {
 
 .landing {
   position: relative;
+  /* night-bordeaux palette */
   --land-bg: #ffffff;
-  --land-surface: #f2f6fc;
+  --land-surface: #f9ecee;
   --land-elevated: #ffffff;
-  --land-text: #0b1a3a;
-  --land-muted: #5c6b84;
-  --land-border: rgba(11, 26, 58, 0.08);
-  --land-gold: #0a5cff;
-  --land-gold-light: #4f8bff;
-  --land-gold-dark: #073ea6;
-  --land-gold-hover: #1a6bff;
-  --land-emerald: #17d68f;
-  --land-teal: #0ea5b7;
-  --land-coral: #ff6f59;
+  --land-text: #1b090b;
+  --land-muted: #732630;
+  --land-border: rgba(27, 9, 11, 0.1);
+  --land-gold: #bf4051;
+  --land-gold-light: #cc6674;
+  --land-gold-dark: #732630;
+  --land-gold-hover: #993341;
+  --land-emerald: #d98c96;
+  --land-teal: #e6b3b9;
+  --land-coral: #993341;
   --land-font: "Poppins", "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   font-family: var(--land-font);
@@ -642,8 +656,8 @@ h1 {
   position: absolute;
   inset: -60px;
   background-image:
-    linear-gradient(rgba(11, 26, 58, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(11, 26, 58, 0.055) 1px, transparent 1px);
+    linear-gradient(rgba(27, 9, 11, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(27, 9, 11, 0.055) 1px, transparent 1px);
   background-size: 54px 54px;
   animation: gridDrift 70s linear infinite;
 }
@@ -671,7 +685,7 @@ h1 {
   height: 620px;
   top: -220px;
   left: -160px;
-  background: radial-gradient(circle, rgba(10, 92, 255, 0.4), transparent 70%);
+  background: radial-gradient(circle, rgba(191, 64, 81, 0.4), transparent 70%);
   animation: auroraDriftA 24s ease-in-out infinite alternate;
 }
 
@@ -680,7 +694,7 @@ h1 {
   height: 520px;
   top: 10%;
   right: -180px;
-  background: radial-gradient(circle, rgba(23, 214, 143, 0.32), transparent 70%);
+  background: radial-gradient(circle, rgba(217, 140, 150, 0.32), transparent 70%);
   animation: auroraDriftB 28s ease-in-out infinite alternate;
 }
 
@@ -689,7 +703,7 @@ h1 {
   height: 460px;
   bottom: -180px;
   left: 22%;
-  background: radial-gradient(circle, rgba(14, 165, 183, 0.28), transparent 70%);
+  background: radial-gradient(circle, rgba(230, 179, 185, 0.28), transparent 70%);
   animation: auroraDriftC 32s ease-in-out infinite alternate;
 }
 
@@ -793,7 +807,7 @@ h1 {
 
 .landing-nav-signin:hover {
   border-color: var(--land-gold);
-  background: rgba(10, 92, 255, 0.05);
+  background: rgba(191, 64, 81, 0.05);
 }
 
 /* ── Hero: the whole page ────────────────────────────────────────────── */
@@ -881,14 +895,14 @@ h1 {
   letter-spacing: -0.01em;
   text-decoration: none;
   cursor: pointer;
-  box-shadow: 0 25px 50px rgba(10, 92, 255, 0.28);
+  box-shadow: 0 25px 50px rgba(191, 64, 81, 0.28);
   transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .btn-gold:hover {
   background: var(--land-gold-hover);
   transform: translateY(-1px);
-  box-shadow: 0 30px 60px rgba(10, 92, 255, 0.34);
+  box-shadow: 0 30px 60px rgba(191, 64, 81, 0.34);
 }
 
 .hero-microcopy {
@@ -905,174 +919,6 @@ h1 {
   .type-headline {
     min-height: 3.6em;
   }
-}
-
-/* ── Get-started modal ───────────────────────────────────────────────── */
-
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  background: rgba(11, 26, 58, 0.55);
-  backdrop-filter: blur(4px);
-  animation: modalOverlayIn 0.2s ease;
-}
-
-@keyframes modalOverlayIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.modal-panel {
-  position: relative;
-  width: 100%;
-  max-width: 440px;
-  max-height: 88vh;
-  overflow-y: auto;
-  background: #ffffff;
-  border-radius: 22px;
-  padding: 36px 30px 32px;
-  box-shadow: 0 40px 90px rgba(11, 26, 58, 0.35);
-  animation: modalPanelIn 0.3s cubic-bezier(0.16, 0.8, 0.24, 1);
-}
-
-@keyframes modalPanelIn {
-  from { opacity: 0; transform: translateY(18px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .modal-overlay,
-  .modal-panel {
-    animation: none;
-  }
-}
-
-.modal-close {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 32px;
-  height: 32px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  border: none;
-  background: var(--land-surface);
-  color: var(--land-muted);
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.modal-close:hover {
-  background: var(--land-border);
-  color: var(--land-text);
-}
-
-.modal-close svg {
-  width: 14px;
-  height: 14px;
-}
-
-.modal-eyebrow {
-  display: block;
-  font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--land-gold);
-  margin: 0 0 10px;
-}
-
-.modal-title {
-  font-family: var(--land-font);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  font-size: 1.35rem;
-  color: var(--land-text);
-  margin: 0 0 8px;
-}
-
-.modal-sub {
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: var(--land-muted);
-  margin: 0;
-}
-
-.modal-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 24px;
-}
-
-.modal-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 0.84rem;
-  font-weight: 600;
-  color: var(--land-text);
-}
-
-.modal-form input {
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--land-border);
-  background: var(--land-surface);
-  color: var(--land-text);
-  font-family: inherit;
-  font-size: 0.95rem;
-  font-weight: 400;
-  outline: none;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.modal-form input::placeholder {
-  color: var(--land-muted);
-  opacity: 0.7;
-}
-
-.modal-form input:focus {
-  border-color: var(--land-gold);
-  background: #ffffff;
-}
-
-.modal-submit {
-  width: 100%;
-  justify-content: center;
-  margin-top: 4px;
-}
-
-.modal-success {
-  text-align: center;
-  padding: 8px 0 4px;
-}
-
-.modal-success-icon {
-  display: inline-grid;
-  place-items: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: rgba(23, 214, 143, 0.14);
-  color: var(--land-emerald);
-  margin-bottom: 16px;
-}
-
-.modal-success-icon svg {
-  width: 24px;
-  height: 24px;
-}
-
-.modal-success .modal-title,
-.modal-success .modal-sub {
-  text-align: center;
 }
 
 /* ── Footer: a slim single line, not a section ──────────────────────── */
@@ -1125,10 +971,34 @@ h1 {
   padding: 32px 28px;
 }
 
-.wizard-steps {
+.wizard-progress {
   display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.wizard-progress-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.wizard-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--ink);
+  transition: width 0.25s ease;
+}
+
+.wizard-progress-percent {
+  flex: 0 0 auto;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
 .wizard-step-labels {

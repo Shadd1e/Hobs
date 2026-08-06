@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 
 const PHRASES = [
   "Your hotel's smartest receptionist lives inside WhatsApp.",
@@ -10,22 +10,6 @@ const PHRASES = [
   "HoBS replies in seconds. Day, night, and everything after.",
   "A guest messages. You do nothing else.",
 ];
-
-function IconClose() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-      <path d="M3 3l10 10M13 3 3 13" />
-    </svg>
-  );
-}
-
-function IconCheck() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 8.5 6.2 12 13 4" />
-    </svg>
-  );
-}
 
 /**
  * Types the given phrases out one character at a time, pauses on the full
@@ -81,116 +65,8 @@ function useTypewriter(
   return text;
 }
 
-type GetStartedModalProps = {
-  open: boolean;
-  onClose: () => void;
-};
-
-function GetStartedModal({ open, onClose }: GetStartedModalProps) {
-  const [form, setForm] = useState({ hotel: "", whatsapp: "", email: "" });
-  const [submitted, setSubmitted] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
-  if (!open) return null;
-
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    // No backend wired up yet — swap this for a real submit (API route,
-    // WhatsApp webhook, form service, etc.) when you're ready to go live.
-    setSubmitted(true);
-  };
-
-  return (
-    <div
-      className="modal-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-title"
-      onClick={onClose}
-    >
-      <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label="Close">
-          <IconClose />
-        </button>
-
-        {!submitted ? (
-          <>
-            <span className="modal-eyebrow">Start for ₦0 today</span>
-            <h2 id="modal-title" className="modal-title">
-              Tell us about your hotel
-            </h2>
-            <p className="modal-sub">No setup fee. We review applications within 1–2 business days.</p>
-
-            <form className="modal-form" onSubmit={handleSubmit}>
-              <label>
-                Hotel name
-                <input
-                  required
-                  type="text"
-                  value={form.hotel}
-                  onChange={(e) => setForm({ ...form, hotel: e.target.value })}
-                  placeholder="e.g. Lagoon View Hotel"
-                />
-              </label>
-              <label>
-                WhatsApp number
-                <input
-                  required
-                  type="tel"
-                  value={form.whatsapp}
-                  onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
-                  placeholder="+234 800 000 0000"
-                />
-              </label>
-              <label>
-                Email (optional)
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="you@hotel.com"
-                />
-              </label>
-              <button type="submit" className="btn-gold modal-submit">
-                Submit application
-              </button>
-            </form>
-          </>
-        ) : (
-          <div className="modal-success">
-            <span className="modal-success-icon">
-              <IconCheck />
-            </span>
-            <h2 className="modal-title">Application received</h2>
-            <p className="modal-sub">
-              We&rsquo;ll reach out on WhatsApp within 1–2 business days to get{" "}
-              {form.hotel || "your hotel"} set up.
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export default function HomePage() {
-  const [modalOpen, setModalOpen] = useState(false);
   const typed = useTypewriter(PHRASES);
-
-  useEffect(() => {
-    document.body.style.overflow = modalOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [modalOpen]);
 
   return (
     <div className="landing landing-single">
@@ -243,9 +119,9 @@ export default function HomePage() {
             </p>
 
             <div className="hero-single-actions">
-              <button className="btn-gold" onClick={() => setModalOpen(true)}>
+              <Link href="/get-started" className="btn-gold">
                 Start for ₦0 today
-              </button>
+              </Link>
               <p className="hero-microcopy">No setup fee. Applications reviewed within 1–2 business days.</p>
             </div>
           </div>
@@ -258,8 +134,6 @@ export default function HomePage() {
           <Link href="/terms">Terms</Link>
         </div>
       </footer>
-
-      <GetStartedModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </div>
   );
 }

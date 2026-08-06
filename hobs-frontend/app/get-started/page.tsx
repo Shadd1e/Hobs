@@ -197,8 +197,22 @@ function Wizard() {
 }
 
 function StepIndicator({ step }: { step: number }) {
+  const percent = Math.round((step / STEP_LABELS.length) * 100);
   return (
     <>
+      <div
+        className="wizard-progress"
+        role="progressbar"
+        aria-valuenow={percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Application progress"
+      >
+        <div className="wizard-progress-track">
+          <div className="wizard-progress-fill" style={{ width: `${percent}%` }} />
+        </div>
+        <span className="wizard-progress-percent">{percent}% done</span>
+      </div>
       <div className="steps" aria-label={`Step ${step} of 4`}>
         {[1, 2, 3, 4].map((n) => (
           <div key={n} className={`step-dot ${n <= step ? "active" : ""}`} />
@@ -271,6 +285,7 @@ function StepOne({
           required
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
+          placeholder="e.g. Adaeze Okafor"
         />
       </div>
 
@@ -282,6 +297,7 @@ function StepOne({
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          placeholder="e.g. adaeze@grandpalacehotel.com"
         />
       </div>
 
@@ -396,6 +412,7 @@ function StepTwo({
           required
           value={businessName}
           onChange={(e) => setBusinessName(e.target.value)}
+          placeholder="e.g. Grand Palace Hotel"
         />
       </div>
 
@@ -404,10 +421,20 @@ function StepTwo({
         <input
           id="business_type"
           required
+          list="business_type_options"
           value={businessType}
           onChange={(e) => setBusinessType(e.target.value)}
-          placeholder="e.g. Hotel, Guesthouse, Serviced Apartments"
+          placeholder="e.g. Hotel"
         />
+        <datalist id="business_type_options">
+          <option value="Hotel" />
+          <option value="Guesthouse" />
+          <option value="Serviced Apartments" />
+          <option value="Resort" />
+          <option value="Lodge" />
+          <option value="Short-let Apartment" />
+        </datalist>
+        <div className="field-suggestions">Suggestions: Hotel, Guesthouse, Serviced Apartments, Resort, Lodge</div>
       </div>
 
       <div className="field">
@@ -417,6 +444,7 @@ function StepTwo({
           required
           value={cityState}
           onChange={(e) => setCityState(e.target.value)}
+          placeholder="e.g. Lekki, Lagos"
         />
       </div>
 
@@ -443,6 +471,7 @@ function StepTwo({
           required
           value={numBranches}
           onChange={(e) => setNumBranches(Number(e.target.value))}
+          placeholder="e.g. 1"
         />
       </div>
 
@@ -452,6 +481,7 @@ function StepTwo({
           id="monthly_volume"
           value={monthlyVolume ?? ""}
           onChange={(e) => setMonthlyVolume(e.target.value)}
+          placeholder="e.g. 40"
         />
       </div>
 
@@ -481,9 +511,19 @@ function StepTwo({
         <label htmlFor="heard_about_us">How did you hear about us? (optional)</label>
         <input
           id="heard_about_us"
+          list="heard_about_us_options"
           value={heardAboutUs ?? ""}
           onChange={(e) => setHeardAboutUs(e.target.value)}
+          placeholder="e.g. Instagram, referral, Google search"
         />
+        <datalist id="heard_about_us_options">
+          <option value="Instagram" />
+          <option value="Facebook" />
+          <option value="WhatsApp referral" />
+          <option value="Google search" />
+          <option value="Friend or colleague" />
+          <option value="Trade event" />
+        </datalist>
       </div>
 
       <div className="field">
@@ -493,6 +533,7 @@ function StepTwo({
           rows={3}
           value={comments ?? ""}
           onChange={(e) => setComments(e.target.value)}
+          placeholder="e.g. We have 12 rooms across 2 floors, and usually take walk-ins after 6pm."
         />
       </div>
 
@@ -554,6 +595,7 @@ function StepThree({
             required
             value={cacNumber}
             onChange={(e) => setCacNumber(e.target.value)}
+            placeholder="e.g. RC1234567"
           />
         </div>
       ) : (
@@ -572,12 +614,24 @@ function StepThree({
           {method === "nin" ? (
             <div className="field">
               <label htmlFor="nin">NIN</label>
-              <input id="nin" required value={nin} onChange={(e) => setNin(e.target.value)} />
+              <input
+                id="nin"
+                required
+                value={nin}
+                onChange={(e) => setNin(e.target.value)}
+                placeholder="e.g. 12345678901"
+              />
             </div>
           ) : (
             <div className="field">
               <label htmlFor="bvn">BVN</label>
-              <input id="bvn" required value={bvn} onChange={(e) => setBvn(e.target.value)} />
+              <input
+                id="bvn"
+                required
+                value={bvn}
+                onChange={(e) => setBvn(e.target.value)}
+                placeholder="e.g. 22345678901"
+              />
             </div>
           )}
         </>

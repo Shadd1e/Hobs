@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 
 const PHRASES = [
   "Your hotel's smartest receptionist lives inside WhatsApp.",
@@ -10,6 +10,41 @@ const PHRASES = [
   "HoBS replies in seconds. Day, night, and everything after.",
   "A guest messages. You do nothing else.",
 ];
+
+// Deterministic PRNG (mulberry32) so the background grid renders identically
+// on the server and on the client — a plain Math.random() here would cause
+// a hydration mismatch since this component's first render happens on both.
+function mulberry32(seed: number) {
+  return function () {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const BOOKING_CELL_COUNT = 320;
+
+type BookingCell = {
+  id: number;
+  live: boolean;
+  delay: number;
+  duration: number;
+};
+
+function buildBookingCells(): BookingCell[] {
+  const rand = mulberry32(1337);
+  return Array.from({ length: BOOKING_CELL_COUNT }, (_, id) => {
+    const live = rand() < 0.14;
+    return {
+      id,
+      live,
+      delay: Math.round(rand() * 600) / 100,
+      duration: Math.round((2.6 + rand() * 1.8) * 100) / 100,
+    };
+  });
+}
 
 /**
  * Types the given phrases out one character at a time, pauses on the full
@@ -67,15 +102,27 @@ function useTypewriter(
 
 export default function HomePage() {
   const typed = useTypewriter(PHRASES);
+  const cells = useMemo(buildBookingCells, []);
 
   return (
     <div className="landing landing-single">
       <div className="landing-bg" aria-hidden="true">
-        <div className="bg-grid" />
-        <span className="aurora-blob aurora-blob-a" />
-        <span className="aurora-blob aurora-blob-b" />
-        <span className="aurora-blob aurora-blob-c" />
-        <div className="bg-vignette" />
+        <div className="booking-grid">
+          {cells.map((cell) => (
+            <span
+              key={cell.id}
+              className={`booking-cell${cell.live ? " is-live" : ""}`}
+              style={
+                cell.live
+                  ? ({
+                      "--delay": `${cell.delay}s`,
+                      "--dur": `${cell.duration}s`,
+                    } as CSSProperties)
+                  : undefined
+              }
+            />
+          ))}
+        </div>
       </div>
 
       <header className="landing-header">

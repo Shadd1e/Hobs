@@ -570,28 +570,29 @@ h1 {
 
 /* ══════════════════════════════════════════════════════════════════════
    Landing page — one full-screen hero (app/page.tsx)
-   White canvas, night-bordeaux ink + accent, tinted rose surfaces.
-   A rotating line of copy types itself out over an animated blueprint-grid
-   background. Scoped entirely under .landing so it never touches the
+   Pure black & white. No gradients anywhere. A rotating line of copy
+   types itself out over a live, animated grid of booking "slots" that
+   quietly light up and clear — a nod to rooms being reserved in real
+   time. Scoped entirely under .landing so it never touches the
    utilitarian styles used by dashboard / auth / docs pages above.
    ══════════════════════════════════════════════════════════════════════ */
 
 .landing {
   position: relative;
-  /* night-bordeaux palette */
+  /* black & white */
   --land-bg: #ffffff;
-  --land-surface: #f9ecee;
+  --land-surface: #f4f4f4;
   --land-elevated: #ffffff;
-  --land-text: #1b090b;
-  --land-muted: #732630;
-  --land-border: rgba(27, 9, 11, 0.1);
-  --land-gold: #bf4051;
-  --land-gold-light: #cc6674;
-  --land-gold-dark: #732630;
-  --land-gold-hover: #993341;
-  --land-emerald: #d98c96;
-  --land-teal: #e6b3b9;
-  --land-coral: #993341;
+  --land-text: #0a0a0a;
+  --land-muted: #6b6b6b;
+  --land-border: rgba(10, 10, 10, 0.14);
+  --land-gold: #0a0a0a;
+  --land-gold-light: #333333;
+  --land-gold-dark: #000000;
+  --land-gold-hover: #1f1f1f;
+  --land-emerald: #4d4d4d;
+  --land-teal: #808080;
+  --land-coral: #a3a3a3;
   --land-font: "Poppins", "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   font-family: var(--land-font);
@@ -613,10 +614,10 @@ h1 {
 }
 
 .gold-text {
-  background: linear-gradient(120deg, var(--land-teal), var(--land-gold) 55%, var(--land-gold-dark));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--land-text);
+  text-decoration: underline;
+  text-decoration-thickness: 0.06em;
+  text-underline-offset: 0.12em;
 }
 
 .sr-only {
@@ -631,9 +632,11 @@ h1 {
   border: 0;
 }
 
-/* ── Living background: a faint blueprint grid (floor-plan lines — a nod to
-   room layouts) that drifts almost imperceptibly, plus soft colour blooms.
-   Confined to a fixed layer behind everything, never competing with type. */
+/* ── Living background: a grid of booking "slots" — a nod to rooms/dates
+   on a calendar — where a scattered few quietly fill in and clear on
+   their own timers, like reservations landing in real time. Pure
+   borders and solid fills only, no gradients. Confined to a fixed layer
+   behind everything, never competing with the type on top of it. */
 
 .landing-single {
   position: relative;
@@ -652,79 +655,54 @@ h1 {
   pointer-events: none;
 }
 
-.bg-grid {
+.booking-grid {
   position: absolute;
-  inset: -60px;
-  background-image:
-    linear-gradient(rgba(27, 9, 11, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(27, 9, 11, 0.055) 1px, transparent 1px);
-  background-size: 54px 54px;
-  animation: gridDrift 70s linear infinite;
+  inset: -40px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  grid-auto-rows: 40px;
+  gap: 1px;
+  opacity: 0.55;
+  animation: bookingGridDrift 130s linear infinite;
 }
 
-.bg-vignette {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse 900px 640px at 26% 40%, var(--land-bg) 0%, rgba(255, 255, 255, 0.55) 45%, transparent 78%);
+.booking-cell {
+  border: 1px solid var(--land-border);
 }
 
-@keyframes gridDrift {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(-54px, -54px); }
+.booking-cell.is-live {
+  animation-name: bookingCellPulse;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-duration: var(--dur, 3.4s);
+  animation-delay: var(--delay, 0s);
 }
 
-.aurora-blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(100px);
-  will-change: transform;
+@keyframes bookingCellPulse {
+  0%,
+  100% {
+    background-color: transparent;
+  }
+  45%,
+  55% {
+    background-color: var(--land-text);
+  }
 }
 
-.aurora-blob-a {
-  width: 620px;
-  height: 620px;
-  top: -220px;
-  left: -160px;
-  background: radial-gradient(circle, rgba(191, 64, 81, 0.4), transparent 70%);
-  animation: auroraDriftA 24s ease-in-out infinite alternate;
-}
-
-.aurora-blob-b {
-  width: 520px;
-  height: 520px;
-  top: 10%;
-  right: -180px;
-  background: radial-gradient(circle, rgba(217, 140, 150, 0.32), transparent 70%);
-  animation: auroraDriftB 28s ease-in-out infinite alternate;
-}
-
-.aurora-blob-c {
-  width: 460px;
-  height: 460px;
-  bottom: -180px;
-  left: 22%;
-  background: radial-gradient(circle, rgba(230, 179, 185, 0.28), transparent 70%);
-  animation: auroraDriftC 32s ease-in-out infinite alternate;
-}
-
-@keyframes auroraDriftA {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(70px, 50px) scale(1.12); }
-}
-
-@keyframes auroraDriftB {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(-60px, 40px) scale(0.92); }
-}
-
-@keyframes auroraDriftC {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(40px, -50px) scale(1.08); }
+@keyframes bookingGridDrift {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(-40px, -40px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .aurora-blob,
-  .bg-grid {
+  .booking-grid {
+    animation: none !important;
+  }
+  .booking-cell.is-live {
     animation: none !important;
   }
 }
@@ -757,7 +735,7 @@ h1 {
   width: 30px;
   height: 30px;
   border-radius: 8px;
-  background: linear-gradient(135deg, var(--land-gold-light), var(--land-gold) 60%, var(--land-gold-dark));
+  background: var(--land-text);
   color: #ffffff;
   flex-shrink: 0;
 }
@@ -807,7 +785,7 @@ h1 {
 
 .landing-nav-signin:hover {
   border-color: var(--land-gold);
-  background: rgba(191, 64, 81, 0.05);
+  background: rgba(10, 10, 10, 0.05);
 }
 
 /* ── Hero: the whole page ────────────────────────────────────────────── */
@@ -895,14 +873,14 @@ h1 {
   letter-spacing: -0.01em;
   text-decoration: none;
   cursor: pointer;
-  box-shadow: 0 25px 50px rgba(191, 64, 81, 0.28);
+  box-shadow: 0 25px 50px rgba(10, 10, 10, 0.22);
   transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .btn-gold:hover {
   background: var(--land-gold-hover);
   transform: translateY(-1px);
-  box-shadow: 0 30px 60px rgba(191, 64, 81, 0.34);
+  box-shadow: 0 30px 60px rgba(10, 10, 10, 0.28);
 }
 
 .hero-microcopy {
